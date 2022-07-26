@@ -1,11 +1,19 @@
+/*
+ * @Author: tackchen
+ * @Date: 2022-07-25 08:31:19
+ * @Description: Coding something
+ */
 module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
   "globals": {
-    "window": true,
-    "console": true,
-    "module": true,
-    "require": true 
+    "globalThis": true,
+  },
+  env: {
+    "browser": true,
+    "es6": true,
+    "node": true,
+    "commonjs": true,
   },
   "parserOptions": {
     "sourceType": "module" // ts 中使用 es 模块

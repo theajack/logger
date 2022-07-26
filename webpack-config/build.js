@@ -1,3 +1,8 @@
+/*
+ * @Author: tackchen
+ * @Date: 2022-07-25 09:06:53
+ * @Description: Coding something
+ */
 const path = require('path');
 
 module.exports = () => {
@@ -11,6 +16,7 @@ module.exports = () => {
             libraryTarget: 'umd',
             libraryExport: 'default',
         },
+        devtool: 'none',
         resolve: {
             extensions: [ '.tsx', '.ts', '.js' ]
         },

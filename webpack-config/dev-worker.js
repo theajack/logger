@@ -4,13 +4,18 @@
  * @Description: Coding something
  */
 const path = require('path');
+const RunNodeWebpackPlugin = require('run-node-webpack-plugin');
 
 module.exports = () => {
     return {
+        watch: true,
+        watchOptions: {
+            ignored: /dist/
+        },
         mode: 'production',
         entry: path.resolve('./', 'src/worker/index.ts'),
         output: {
-            path: path.resolve('./', 'dist'),
+            path: path.resolve('./', 'src/worker/dist'),
             filename: 'worker.min.js',
             libraryTarget: 'var',
             libraryExport: 'default',
@@ -39,6 +44,10 @@ module.exports = () => {
                     configFile: './.eslintrc.js'
                 }
             }]
-        }
+        },
+        plugins: [
+
+            new RunNodeWebpackPlugin({scriptToRun: 'scripts/wrap-worker.js'})
+        ]
     };
 };

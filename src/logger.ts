@@ -25,7 +25,7 @@ export class Logger {
     useConsole: boolean;
 
     constructor ({
-        id,
+        id = 'default',
         localStorageFallback,
         baseInfo,
         useConsole = true,

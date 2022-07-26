@@ -44,3 +44,17 @@ export interface ILoggerOptions extends ILogDataConfigOptions, IStoreConfig {
     useStore?: boolean;
     onReport?(): void;
 }
+
+export type TWorkerType = 'closedb' | 'add';
+
+export interface IWorkerMessage {
+    type: TWorkerType;
+    id?: string;
+    data?: ILogData;
+}
+
+export interface IWorkerBackMessage {
+    type: TWorkerType;
+    id: string;
+    success: boolean;
+}

@@ -3,52 +3,49 @@
  * @Date: 2022-07-24 15:53:23
  * @Description: Coding something
  */
-import {ILogData, IStoreConfig} from './type';
+import {ILogData, IStoreConfig, IWorkerBackMessage, IWorkerMessage} from './type';
+import WorkerCode from './worker/dist/worker.min';
 
+function codeToBlob (code: string) {
+    const blob = new window.Blob([code], {type: 'text/javascript'}); // 生成js文件对象
+    const objectURL = window.URL.createObjectURL(blob); // 生成js文件的url
+    return objectURL;
+}
+    
+const worker = new window.Worker(codeToBlob(WorkerCode as any)); // 使用 blob对象的url
+    
 export class Stroe {
     useIndexedDB = !!window.indexedDB;
     canUse = !!window.indexedDB || !!window.localStorage;
     maxRecords: number;
+    id: string;
 
-    records: ILogData[] = [];
     constructor ({
-        id,
+        id = 'default',
         localStorageFallback,
         maxRecords,
     }: IStoreConfig) {
+        this.id = id;
         console.log(id, localStorageFallback);
         if (maxRecords) this.maxRecords = maxRecords;
 
-        if (this.useIndexedDB) {
-            this.initIndexedDB(id);
-        }
+        worker.onmessage = (e: {data: IWorkerBackMessage}) => {
+            if (e.data.id === id) {
+                this._onMessage(e.data);
+            }
+        };
     }
 
-    save (data: ILogData) {
-        console.log(data);
+    private _onMessage (data: IWorkerBackMessage) {
+        console.log('onmessage: id = ', this.id, data );
     }
 
-    private initIndexedDB (id: string = '') {
-        console.log(id);
-        // const request = window.indexedDB.open(`tc_logger_${id}`, version);
-        // request.onsuccess = function (e) {
-        //     resolve(e.target.result);
-        // };
-        // request.onerror = function (e) {
-        //     reject(e);
-        // };
-        // request.onupgradeneeded = function (e) {
-        //     const db = e.target?.result;
-      
-        //     if (!db.objectStoreNames.contains(storeName)) {
-        //         const objectStore = db.createObjectStore(storeName, {
-        //             keyPath: 'id',
-        //             autoIncrement: true
-        //         });
-        //         objectStore.createIndex('index', 'filename', {
-        //             unique: false
-        //         });
-        //     }
-        // };
+    add (data: ILogData) {
+        const message: IWorkerMessage = {
+            type: 'add',
+            id: this.id,
+            data
+        };
+        worker.postMessage(message);
     }
 }

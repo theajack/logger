@@ -4,25 +4,28 @@
  * @Description: Coding something
  */
 
-import {ILogData} from '../type';
-import {store} from './store';
+import {IWorkerMessage} from '../type';
+import {DB} from './store';
 
-declare const globalThis: Window;
-
-console.log(globalThis);
-
-store.init();
-
-globalThis.addEventListener('message', function (
+globalThis.addEventListener('message', async function (
     this: Window,
-    e: {data: {data: ILogData, id: string}}
+    e: {data: IWorkerMessage}
 ) {
+    const {type, data, id} = e.data;
+
+    const db = new DB(id);
     // console.log('indexedDB', this.indexedDB);
     // this.indexedDB.open('tc_logger_test', 1);
-    console.log(globalThis, globalThis.location, e);
+    let result: boolean = true;
+    switch (type) {
+        case 'add': {
+            result = await db.add(data);
+        }; break;
 
-    store.saveLog(e.data);
+        case 'closedb': {
+            db.close();
+        }; break;
+    }
 
-    (globalThis.postMessage as any)('You said: ' + e.data); // 不加any build时会报错
-
+    (globalThis.postMessage as any)({id, type, result});
 }, false);

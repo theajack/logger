@@ -3,10 +3,20 @@
     "version": "0.0.1",
     "description": "idcard",
     "scripts": {
-        "dev": "webpack-dev-server --open --config webpack-config/dev.js",
+        "dev:wk": "webpack --config webpack-config/dev-worker.js",
+        "dev:main": "webpack-dev-server --open --config webpack-config/dev.js",
+        "dev": "run-p dev:main dev:wk",
         "build": "webpack --config webpack-config/build.js",
         "build:wk": "webpack --config webpack-config/build-worker.js",
-        "lint": "eslint src --ext js"
+        "lint": "eslint src --ext js",
+        "eb:build": "node ./scripts/ebuild/build.js",
+        "eb:docs": "node ./scripts/ebuild/build-docs.js",
+        "eb:release": "node ./scripts/ebuild/push-release.js",
+        "eb:publish": "node ./scripts/ebuild/publish.js",
+        "eb:purge": "node ./scripts/ebuild/purge-cdn.js",
+        "eb:mono-init-pkg": "node ./scripts/ebuild/init-packages-info.js",
+        "eb:mono-init-pkg-dev": "node ./scripts/ebuild/init-packages-info.js dev",
+        "eb:mono-dep": "node ./scripts/ebuild/init-learn-dep.js"
     },
     "author": "theajack",
     "repository": {
@@ -37,11 +47,13 @@
         "eslint-plugin-promise": "^4.2.1",
         "husky": "^3.0.9",
         "lint-staged": "^9.4.2",
+        "npm-run-all": "^4.1.5",
         "ts-loader": "^6.2.1",
         "typescript": "^3.7.4",
         "webpack": "^4.41.2",
         "webpack-cli": "^3.3.9",
-        "webpack-dev-server": "^3.8.2"
+        "webpack-dev-server": "^3.8.2",
+        "run-node-webpack-plugin": "^1.3.0"
     },
     "husky": {
         "hooks": {
