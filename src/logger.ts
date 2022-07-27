@@ -4,23 +4,16 @@
  * @Description: Coding something
  */
 import {Stroe} from './store';
-import {IJson} from './type';
-import {dateToStr, toLogString, uuid} from './utils';
+import {IJson, IBaseInfoOption, IMessageData} from './type';
+import {uuid} from './utils';
 import {
-    IBaseInfo, ILoggerOptions, ILogDataConfig,
-    ILogData,
+    ILoggerOptions,
 } from './type';
 
 
-export class Logger {
+export class Logger extends Stroe {
     store: Stroe;
 
-    baseInfo: IBaseInfo = {
-        uid: '',
-        traceid: uuid(),
-        network: '',
-        url: window.location.href,
-    }
 
     useConsole: boolean;
 
@@ -32,53 +25,48 @@ export class Logger {
         useStore = true,
         maxRecords,
     }: ILoggerOptions) {
+        super({
+            useStore,
+            id,
+            localStorageFallback,
+            maxRecords,
+        });
         if (!id) throw new Error('Logger id is required');
         this.useConsole = useConsole;
-        if (useStore) {
-            this.store = new Stroe({
-                id, localStorageFallback, maxRecords
-            });
-        }
         
-        if (baseInfo) this.injectBaseInfo(baseInfo);
-        else this.initUid();
+        this.injectBaseInfo(baseInfo);
     }
 
-    private initUid () {
+    private _initUid (uid?: string): string {
         const KEY = 'tc_logger_uid';
-        if (!this.baseInfo.uid) {
+        if (uid) {
+            window.localStorage.setItem(KEY, uid);
+            return uid;
+        } else {
             let uid = window.localStorage.getItem(KEY);
             if (!uid) {
                 uid = uuid();
                 window.localStorage.setItem(KEY, uid);
             }
-            this.baseInfo.uid = uid;
-        } else {
-            window.localStorage.setItem(KEY, this.baseInfo.uid);
+            return uid;
         }
     }
 
-    injectBaseInfo (baseInfo: ILogDataConfig & IJson) {
-        Object.assign(this.baseInfo, baseInfo);
-        this.initUid();
+    injectBaseInfo (baseInfo: IBaseInfoOption & IJson = {}) {
+        baseInfo.uid = this._initUid(baseInfo?.uid);
+        baseInfo.url = baseInfo.url || window.location.href;
+        baseInfo.ua = baseInfo.ua || window.navigator.userAgent;
+        super.injectBaseInfo(baseInfo);
     }
 
     log (msg: string, payload?: any) {
-        const data = this.buildLogData(msg, payload);
-        const logString = this.dataToLogString(data);
-
-        if (this.useConsole) {
-            console.log(logString, data);
-        }
+        const data = this._buildLogData(msg, payload);
+        super._add(data);
     }
 
     error (msg: string, payload?: any) {
-        const data = this.buildLogData(msg, payload, 'error');
-        const logString = this.dataToLogString(data);
-
-        if (this.useConsole) {
-            console.error(logString, data);
-        }
+        const data = this._buildLogData(msg, payload, 'error');
+        super._add(data);
     }
 
     // 下载日志
@@ -94,27 +82,11 @@ export class Logger {
 
     }
 
-    refreshTraceId () {
-        this.baseInfo.traceid = uuid();
-    }
-
-    private buildLogData (msg: string, payload?: any, type : 'log' | 'error' = 'log'): ILogData {
-        const date = new Date();
-        const timestamp = date.getTime();
-        const time = dateToStr(date);
+    private _buildLogData (msg: string, payload?: any, type : 'log' | 'error' = 'log'): IMessageData {
         return {
-            ...this.baseInfo,
             msg,
             payload,
             type,
-            timestamp,
-            time,
         };
-    }
-
-    private dataToLogString (data: ILogData) {
-        const payload = typeof data.payload !== 'undefined' ? ` payload=${toLogString(data.payload)};` : '';
-        const network = data.network ? ` network=${data.network};` : '';
-        return `[${data.time}]:${data.type === 'error' ? '[error]' : ''} msg=${data.msg}; uid=${data.uid}; traceid=${data.traceid}${network}${payload}`;
     }
 }

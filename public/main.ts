@@ -6,5 +6,8 @@
 import Main from '../src/index';
 const {Logger} = Main;
 
-(window as any).lg = new Logger({id: 'main'});
+const win = (window as any);
+
+win.lg = new Logger({id: 'main'});
+win.Logger = Logger;
     

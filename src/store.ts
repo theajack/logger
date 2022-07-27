@@ -3,7 +3,8 @@
  * @Date: 2022-07-24 15:53:23
  * @Description: Coding something
  */
-import {ILogData, IStoreConfig, IWorkerBackMessage, IWorkerMessage} from './type';
+import {IBaseInfoOption, IStoreConfig, IWorkerBackMessage, TWorkerType, IMessageData} from './type';
+import {transformDOM} from './utils';
 import WorkerCode from './worker/dist/worker.min';
 
 function codeToBlob (code: string) {
@@ -19,12 +20,15 @@ export class Stroe {
     canUse = !!window.indexedDB || !!window.localStorage;
     maxRecords: number;
     id: string;
+    useStore: boolean;
 
     constructor ({
+        useStore = true,
         id = 'default',
         localStorageFallback,
         maxRecords,
     }: IStoreConfig) {
+        this.useStore = useStore;
         this.id = id;
         console.log(id, localStorageFallback);
         if (maxRecords) this.maxRecords = maxRecords;
@@ -40,12 +44,35 @@ export class Stroe {
         console.log('onmessage: id = ', this.id, data );
     }
 
-    add (data: ILogData) {
-        const message: IWorkerMessage = {
-            type: 'add',
+    protected _add (data: IMessageData) {
+        this._postMessage('add', this._transformPayload(data));
+    }
+
+    injectBaseInfo (baseInfo: IBaseInfoOption) {
+        this._postMessage('injectBaseInfo', baseInfo);
+    }
+
+    get () {
+
+    }
+
+    refreshTraceId () {
+        this._postMessage('refreshTraceId');
+    }
+
+    protected _postMessage (type: TWorkerType, data: any = null) {
+        const message = {
+            type,
             id: this.id,
             data
         };
         worker.postMessage(message);
+    }
+
+    private _transformPayload (data: IMessageData) {
+        if (data.payload instanceof window.HTMLElement) {
+            data.payload = transformDOM(data.payload);
+        }
+        return data;
     }
 }

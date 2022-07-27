@@ -4,7 +4,7 @@
  * @Description: Coding something
  */
 
-import {IWorkerMessage} from '../type';
+import {IBaseInfoOption, IDBConfig, IWorkerMessage} from '../type';
 import {DB} from './store';
 
 globalThis.addEventListener('message', async function (
@@ -18,12 +18,20 @@ globalThis.addEventListener('message', async function (
     // this.indexedDB.open('tc_logger_test', 1);
     let result: boolean = true;
     switch (type) {
+        case 'injectConfig': {
+            db.injectConfig(data as IDBConfig);
+        };
+
         case 'add': {
             result = await db.add(data);
         }; break;
 
-        case 'closedb': {
+        case 'closeDB': {
             db.close();
+        }; break;
+
+        case 'injectBaseInfo': {
+            db.injectBaseInfo(data as IBaseInfoOption);
         }; break;
     }
 

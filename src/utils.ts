@@ -18,16 +18,18 @@ export function uuid () {
     return uuid;
 }
 
+export function transformDOM (value: HTMLElement) {
+    const attributes = value.attributes;
+    let attrs = '';
+    for (let i = 0; i < attributes.length; i++) {
+        const attr = attributes[i];
+        attrs += ` ${attr.name}="${attr.value}"`;
+    }
+    return `<${value.tagName.toLowerCase()}${attrs}/>`;
+}
+
 export function toLogString (value: any): string {
-    if (value instanceof window.HTMLElement) {
-        const attributes = value.attributes;
-        let attrs = '';
-        for (let i = 0; i < attributes.length; i++) {
-            const attr = attributes[i];
-            attrs += ` ${attr.name}="${attr.value}"`;
-        }
-        return `<${value.tagName.toLowerCase()}${attrs}/>`;
-    } else if (typeof value === 'object') {
+    if (typeof value === 'object') {
         return JSON.stringify(value);
     } else {
         return value.toString();
