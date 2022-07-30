@@ -3,7 +3,7 @@
  * @Date: 2022-07-30 13:16:15
  * @Description: Coding something
  */
-import {IBaseInfoOption, IBaseInfoParam, IJson, ILogData, ILogDBData, IMessageData} from '../type';
+import {IBaseInfoOption, IBaseInfoParam, IJson, ILogData, ILogDBData, IMessageData, TLogStoreType} from '../type';
 import {BaseInfo} from './base-info';
 
 export type TFilterOption =
@@ -13,6 +13,7 @@ export type TFilterOption =
 
 
 export abstract class DBBaseMethods {
+    type: TLogStoreType;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor (data: IBaseInfoParam) {}
     abstract add (data?: IMessageData): Promise<any> | any;

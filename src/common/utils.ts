@@ -38,11 +38,11 @@ export function toLogString (value: any): string {
     }
 }
 
-export function dateToStr (date: Date): string {
+export function dateToStr (date: Date, comm = ':'): string {
     const dateStr = `${date.getFullYear()}-${fn(date.getMonth() + 1)}-${fn(date.getDate())}`;
     const ms = date.getMilliseconds();
     const msStr = ms < 100 ? `0${fn(ms)}` : ms;
-    return `${dateStr} ${fn(date.getHours())}:${fn(date.getMinutes())}:${fn(date.getSeconds())}:${msStr}`;
+    return `${dateStr} ${fn(date.getHours())}${comm}${fn(date.getMinutes())}${comm}${fn(date.getSeconds())}${comm}${msStr}`;
 }
 
 function fn (num: number) {

@@ -3,45 +3,66 @@
  * @Date: 2022-07-24 15:52:13
  * @Description: Coding something
  */
-import {IJson, IBaseInfoOption, IMessageData, TLogType, ILogDBData} from './type';
-import {download, uuid} from './common/utils';
+import {
+    IJson, IBaseInfoOption, IMessageData, TLogType,
+    ILogDBData, IBaseInfoParam, IStoreConfig
+} from './type';
+import {dateToStr, download, uuid} from './common/utils';
 import {
     ILoggerOption,
 } from './type';
-import {Store} from './store/index';
-import {TFilterOption} from './common/db-base';
+import {DBBaseMethods, TFilterOption} from './common/db-base';
+import {WorkerStore} from './store/worker-store';
 
 export class Logger {
 
-    store: Store;
-
-    useStore: boolean;
+    store: DBBaseMethods;
+    id: string;
 
     constructor ({
         id = 'default',
-        useStore = true,
         useConsole = true,
-        useStorageInstead = true,
+        storeType = 'idb',
         maxRecords = 0,
         baseInfo,
         onReport,
     }: ILoggerOption) {
-        
-        this.useStore = useStore;
-        if (useStore) {
-            this.store = new Store({
-                id,
-                useStore,
-                useStorageInstead,
-                maxRecords,
-                useConsole,
-                onReport,
-            });
-        }
-
         if (!id) throw new Error('Logger id is required');
         
+        this._initStore({
+            id,
+            storeType,
+            maxRecords,
+            useConsole,
+            onReport,
+        });
+
+        this.id = id;
         this.injectBaseInfo(baseInfo);
+    }
+
+    private _initStore ({
+        id,
+        storeType,
+        maxRecords,
+        useConsole,
+        onReport,
+    }: IStoreConfig) {
+        const canUseIndexedDB = !!window.Worker && !!window.indexedDB;
+        const canStorage = !!window.localStorage;
+        const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport};
+        
+        if (storeType === 'idb' && canUseIndexedDB) {
+            this.store = new WorkerStore(options);
+        } else if (storeType === 'storage' && canStorage) {
+            // todo 使用localStorage 代替indexedDB
+            // this.storage = new Storage(id);
+            // this.storage.baseInfo.injectConfig();
+        } else if (storeType === 'temp') {
+
+        } else {
+            
+        }
     }
 
     private _initUid (uid?: string): string {
@@ -63,7 +84,7 @@ export class Logger {
         baseInfo.uid = this._initUid(baseInfo?.uid);
         baseInfo.url = baseInfo.url || window.location.href;
         baseInfo.ua = baseInfo.ua || window.navigator.userAgent;
-        this.store.StoreObject.injectBaseInfo(baseInfo);
+        this.store.injectBaseInfo(baseInfo);
     }
 
     log (...args: any[]) {
@@ -82,7 +103,7 @@ export class Logger {
     private _logCommon (args: any[], type: TLogType): Promise<ILogDBData> {
         const {msg, payload} = this._shapeArgs(args);
         const data = this._buildLogData(msg, payload, type);
-        return this.store.StoreObject.add(data);
+        return this.store.add(data);
 
     }
 
@@ -99,11 +120,11 @@ export class Logger {
     }
 
     refreshTraceId () {
-        this.store.StoreObject.refreshTraceId();
+        this.store.refreshTraceId();
     }
 
     refreshDurationStart () {
-        this.store.StoreObject.refreshDurationStart();
+        this.store.refreshDurationStart();
     }
 
     // 下载日志
@@ -114,9 +135,9 @@ export class Logger {
         filter?: TFilterOption
     } = {}) {
 
-        if (!name) name = Date.now().toString();
+        if (!name) name = dateToStr(new Date(), '_');
         
-        const data = await this.store.StoreObject.download(filter);
+        const data = await this.store.download(filter);
 
         download({
             name: `${name}.log`,
@@ -125,11 +146,11 @@ export class Logger {
     }
 
     get (logid: string) {
-        return this.store.StoreObject.get(logid);
+        return this.store.get(logid);
     }
 
     getAll () {
-        return this.store.StoreObject.getAll();
+        return this.store.getAll();
     }
 
 
@@ -137,7 +158,7 @@ export class Logger {
         if (!filter) {
             return this.getAll();
         }
-        return this.store.StoreObject.filter(filter);
+        return this.store.filter(filter);
     }
 
     private _buildLogData (msg: string, payload?: any, type: TLogType = 'log'): IMessageData {

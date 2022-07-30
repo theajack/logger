@@ -5,6 +5,5 @@
 -->
 
 1. maxRecords
-2. useStorageInstead
-3. useStore 使用内存存储数据
-4. 日志级别 level
+2. storeType
+3. 日志级别 level

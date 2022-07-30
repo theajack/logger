@@ -50,12 +50,12 @@ export type IMessageData = Pick<
 
 export type ILogString = string;
 
+export type TLogStoreType = 'idb' | 'storage' | 'temp' | 'none';
 
 export interface IStoreConfig {
     id: string; // 作为dbName 使用，默认为location.hostname
-    useStore: boolean;
     useConsole: boolean;
-    useStorageInstead: boolean; // 如果不支持是否降级到localStorage存储数据 默认为false
+    storeType: TLogStoreType; // 存储类型
     maxRecords: number; // 最大日志数量 默认不限制
     onReport?: (data: ILogDBData) => void;
 }
