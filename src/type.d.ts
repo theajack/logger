@@ -7,61 +7,67 @@ export interface IJson<T=any> {
     [prop: string]: T;
 }
 
-export interface ILogDataConfig {
+export type TLogType = 'error' | 'log' | 'warn' | 'info';
+
+export interface ILogDBData extends ILogData {
     uid: string;
     traceid: string;
     network: string;
-}
-
-
-export interface IBaseInfo extends ILogDataConfig, IJson {
     url: string;
     ua: string;
-}
-
-export type IBaseInfoOption = {
-    [key in keyof IBaseInfo]?: IBaseInfo[key]
-}
-
-export interface IMessageData {
     msg: string;
     payload?: any;
-    type: 'error' | 'log';
-}
+    type: TLogType;
 
-// 日志存储的数据
-export interface ILogData extends IBaseInfo, IMessageData {
-}
-
-export interface ILogDBData extends ILogData {
     time: string;
     timestamp: number;
     logid: string;
 }
 
+// 日志存储的数据
+export type ILogData = Pick<
+    ILogDBData,
+    'uid' | 'traceid' | 'network' | 'url' | 'ua' |
+    'msg' | 'payload' | 'type'
+>
+
+export type ILoggerConfig = Pick<
+    ILogDBData,
+    'uid' | 'traceid' | 'network'
+>
+
+export type ILoggerConfigOption = Partial<ILoggerConfig>
+
+export interface IBaseInfo extends ILoggerConfig, Pick<ILogDBData, 'url' | 'ua'> {}
+
+export type IBaseInfoOption = Partial<IBaseInfo>
+
+export type IMessageData = Pick<
+    ILogDBData,
+    'msg' | 'payload' | 'type'
+>
+
 export type ILogString = string;
 
-export type IBaseInfoOptions = {
-    [prop in keyof ILogDataConfig]?: ILogDataConfig[prop];
-}
 
 export interface IStoreConfig {
-    useStore?: boolean;
-    id?: string; // 作为dbName 使用，默认为location.hostname
-    localStorageFallback?: boolean; // 如果不支持是否降级到localStorage存储数据 默认为false
-    maxRecords?: number; // 最大日志数量 默认不限制
+    id: string; // 作为dbName 使用，默认为location.hostname
+    useStore: boolean;
+    useConsole: boolean;
+    useStorageInstead: boolean; // 如果不支持是否降级到localStorage存储数据 默认为false
+    maxRecords: number; // 最大日志数量 默认不限制
+    onReport?: (data: ILogDBData) => void;
 }
 
-export interface ILoggerOptions extends IBaseInfoOptions, IStoreConfig {
+export type IBaseInfoParam = Pick<IStoreConfig, 'id' | 'useConsole' | 'maxRecords' | 'onReport'>
+
+export type IStoreConfigOption = Partial<IStoreConfig>
+
+export interface ILoggerOption extends Partial<IStoreConfig> {
     baseInfo?: IBaseInfo;
-    useConsole?: boolean;
-    onReport?(): void;
 }
 
-export interface IDBConfig {
-    useConsole?: boolean;
-    maxRecords?: number; // 最大日志数量 默认不限制
-}
+export type IDBConfig  = Pick<IStoreConfig, 'useConsole' | 'maxRecords'>
 
 export type TWorkerType = 'closeDB' | 'add' | 'injectBaseInfo'
     | 'refreshTraceId' | 'injectConfig';
@@ -75,5 +81,5 @@ export interface IWorkerMessage {
 export interface IWorkerBackMessage {
     type: TWorkerType;
     id: string;
-    success: boolean;
+    result: any;
 }

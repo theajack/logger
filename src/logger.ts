@@ -3,36 +3,42 @@
  * @Date: 2022-07-24 15:52:13
  * @Description: Coding something
  */
-import {Stroe} from './store';
-import {IJson, IBaseInfoOption, IMessageData} from './type';
-import {uuid} from './utils';
+import {IJson, IBaseInfoOption, IMessageData, TLogType} from './type';
+import {uuid} from './common/utils';
 import {
-    ILoggerOptions,
+    ILoggerOption,
 } from './type';
+import {Store} from './store/index';
 
+export class Logger {
 
-export class Logger extends Stroe {
-    store: Stroe;
+    store: Store;
 
-
-    useConsole: boolean;
+    useStore: boolean;
 
     constructor ({
         id = 'default',
-        localStorageFallback,
-        baseInfo,
-        useConsole = true,
         useStore = true,
-        maxRecords,
-    }: ILoggerOptions) {
-        super({
-            useStore,
-            id,
-            localStorageFallback,
-            maxRecords,
-        });
+        useConsole = true,
+        useStorageInstead = true,
+        maxRecords = 0,
+        baseInfo,
+        onReport,
+    }: ILoggerOption) {
+        
+        this.useStore = useStore;
+        if (useStore) {
+            this.store = new Store({
+                id,
+                useStore,
+                useStorageInstead,
+                maxRecords,
+                useConsole,
+                onReport,
+            });
+        }
+
         if (!id) throw new Error('Logger id is required');
-        this.useConsole = useConsole;
         
         this.injectBaseInfo(baseInfo);
     }
@@ -56,17 +62,42 @@ export class Logger extends Stroe {
         baseInfo.uid = this._initUid(baseInfo?.uid);
         baseInfo.url = baseInfo.url || window.location.href;
         baseInfo.ua = baseInfo.ua || window.navigator.userAgent;
-        super.injectBaseInfo(baseInfo);
+        this.store.StoreObject.injectBaseInfo(baseInfo);
     }
 
-    log (msg: string, payload?: any) {
-        const data = this._buildLogData(msg, payload);
-        super._add(data);
+    log (...args: any[]) {
+        this._logCommon(args, 'log');
+    }
+    error (...args: any[]) {
+        this._logCommon(args, 'error');
+    }
+    warn (...args: any[]) {
+        this._logCommon(args, 'warn');
+    }
+    info (...args: any[]) {
+        this._logCommon(args, 'info');
     }
 
-    error (msg: string, payload?: any) {
-        const data = this._buildLogData(msg, payload, 'error');
-        super._add(data);
+    private _logCommon (args: any[], type: TLogType) {
+        const {msg, payload} = this._shapeArgs(args);
+        const data = this._buildLogData(msg, payload, type);
+        this.store.StoreObject.add(data);
+    }
+
+    private _shapeArgs (args: any[]) {
+        if (typeof args[0] === 'string') {
+            const msg = args[0];
+            let payload = args.slice(1);
+            if (payload.length === 1) {
+                payload = payload[0];
+            }
+            return {msg, payload};
+        }
+        return {msg: '__def__', payload: args};
+    }
+
+    refreshTraceId () {
+        this.store.StoreObject.refreshTraceId();
     }
 
     // 下载日志
@@ -74,15 +105,11 @@ export class Logger extends Stroe {
         
     }
 
-    onReport () {
-        
-    }
-
     filter () {
 
     }
 
-    private _buildLogData (msg: string, payload?: any, type : 'log' | 'error' = 'log'): IMessageData {
+    private _buildLogData (msg: string, payload?: any, type: TLogType = 'log'): IMessageData {
         return {
             msg,
             payload,

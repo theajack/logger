@@ -1,4 +1,5 @@
 import {Logger} from './logger';
+export {Logger} from './logger';
 
 /*
  * @Author: tackchen

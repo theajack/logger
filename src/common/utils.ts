@@ -1,3 +1,5 @@
+import {ILogDBData} from 'src/type';
+
 /*
  * @Author: tackchen
  * @Date: 2022-07-24 16:27:54
@@ -45,4 +47,16 @@ export function dateToStr (date: Date): string {
 
 function fn (num: number) {
     return num < 10 ? (`0${num}`) : num;
+}
+
+export function codeToBlob (code: string) {
+    const blob = new window.Blob([code], {type: 'text/javascript'}); // 生成js文件对象
+    const objectURL = window.URL.createObjectURL(blob); // 生成js文件的url
+    return objectURL;
+}
+
+export function dataToLogString (data: ILogDBData) {
+    const payload = typeof data.payload !== 'undefined' ? ` payload=${toLogString(data.payload)};` : '';
+    const network = data.network ? ` network=${data.network};` : '';
+    return `[${data.time}]:${data.type === 'error' ? '[error]' : ''} msg=${data.msg}; uid=${data.uid}; traceid=${data.traceid}; logid=${data.logid}${network}${payload}`;
 }

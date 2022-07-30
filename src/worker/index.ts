@@ -4,8 +4,8 @@
  * @Description: Coding something
  */
 
-import {IBaseInfoOption, IDBConfig, IWorkerMessage} from '../type';
-import {DB} from './store';
+import {IBaseInfoOption, IWorkerBackMessage, IWorkerMessage} from '../type';
+import {WorkerDB} from './store';
 
 globalThis.addEventListener('message', async function (
     this: Window,
@@ -13,16 +13,17 @@ globalThis.addEventListener('message', async function (
 ) {
     const {type, data, id} = e.data;
 
-    const db = new DB(id);
-    // console.log('indexedDB', this.indexedDB);
+    const db = new WorkerDB(id);
+    console.log('on worker msg', {type, data, id} );
     // this.indexedDB.open('tc_logger_test', 1);
-    let result: boolean = true;
+    let result: any = true;
     switch (type) {
         case 'injectConfig': {
-            db.injectConfig(data as IDBConfig);
-        };
+            db.baseInfo.injectConfig(data);
+        }; break;
 
         case 'add': {
+            console.warn('exec add');
             result = await db.add(data);
         }; break;
 
@@ -30,10 +31,14 @@ globalThis.addEventListener('message', async function (
             db.close();
         }; break;
 
+        case 'refreshTraceId': {
+            db.refreshTraceId();
+        }; break;
+
         case 'injectBaseInfo': {
-            db.injectBaseInfo(data as IBaseInfoOption);
+            db.baseInfo.injectBaseInfo(data as IBaseInfoOption);
         }; break;
     }
 
-    (globalThis.postMessage as any)({id, type, result});
+    (globalThis.postMessage as any)({id, type, result} as IWorkerBackMessage);
 }, false);
