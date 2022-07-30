@@ -9,6 +9,7 @@ export interface IJson<T=any> {
 
 export type TLogType = 'error' | 'log' | 'warn' | 'info';
 
+// 日志存储的数据
 export interface ILogDBData extends ILogData {
     uid: string;
     traceid: string;
@@ -18,13 +19,13 @@ export interface ILogDBData extends ILogData {
     msg: string;
     payload?: any;
     type: TLogType;
+    duration: number;
 
     time: string;
     timestamp: number;
     logid: string;
 }
 
-// 日志存储的数据
 export type ILogData = Pick<
     ILogDBData,
     'uid' | 'traceid' | 'network' | 'url' | 'ua' |
@@ -70,16 +71,20 @@ export interface ILoggerOption extends Partial<IStoreConfig> {
 export type IDBConfig  = Pick<IStoreConfig, 'useConsole' | 'maxRecords'>
 
 export type TWorkerType = 'closeDB' | 'add' | 'injectBaseInfo'
-    | 'refreshTraceId' | 'injectConfig';
+    | 'refreshTraceId' | 'refreshDurationStart' | 'injectConfig' | 'destory'
+    | 'get' | 'getAll' | 'filter' | 'download';
 
-export interface IWorkerMessage {
+export interface IWorkerMessageCommon {
+    msgid: string;
     type: TWorkerType;
+}
+
+export interface IWorkerMessage extends IWorkerMessageCommon{
     id?: string;
     data?: any;
 }
 
-export interface IWorkerBackMessage {
-    type: TWorkerType;
+export interface IWorkerBackMessage<T = any> extends IWorkerMessageCommon{
     id: string;
-    result: any;
+    result: T;
 }

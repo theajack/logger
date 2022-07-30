@@ -37,12 +37,13 @@ export class Store {
             const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport};
             if (this.canUseIndexedDB) {
                 this.StoreObject = new WorkerStore(options);
-                // indexedDB & worker可用
             } else if (useStorageInstead) {
-                // 使用localStorage 代替indexedDB
+                // todo 使用localStorage 代替indexedDB
                 // this.storage = new Storage(id);
                 // this.storage.baseInfo.injectConfig();
             }
+        } else {
+            // todo tmp store
         }
     }
 }

@@ -13,22 +13,22 @@ const lg = new Logger({
         console.warn('onReport', d);
     }
 });
-lg.log('1111');
-lg.refreshTraceId();
-lg.log('2222');
-lg.refreshTraceId();
-lg.log('3333');
-
-lg.injectBaseInfo({
-    uid: 'xx',
-    ua: '111',
-    url: '222',
-    network: '4g',
-    traceid: '----'
-});
-lg.log('4444');
 win.Logger = Logger;
-
 win.lg = lg;
+
+// lg.log('1111');
+// lg.refreshTraceId();
+// lg.log('2222');
+// lg.refreshTraceId();
+// lg.log('3333');
+
+// lg.injectBaseInfo({
+//     uid: 'xx',
+//     ua: '111',
+//     url: '222',
+//     network: '4g',
+//     traceid: '----'
+// });
+// lg.log('4444');
 
     

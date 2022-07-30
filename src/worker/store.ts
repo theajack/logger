@@ -4,18 +4,37 @@
  * @Description: Coding something
  */
 
-import {IJson, ILogData, ILogDBData} from '../type';
-import {DBBase} from '../common/db-base';
+import {IJson, ILogData, ILogDBData, TWorkerType} from '../type';
+import {DBBase, TFilterOption} from '../common/db-base';
+import {checkValue} from '../filter-json/filter';
+import {dataToLogString} from '../common/utils';
+import {FuncFilter} from '../filter-json/func-filter';
 
 
 const dbMap: IJson<WorkerDB> = {
 
 };
 
+function createMessageMap (db: WorkerDB): Record<TWorkerType, (data: any) => (Promise<any> | any)> {
+    return {
+        add: (data) => db.add(data),
+        injectConfig: (data) => db.baseInfo.injectConfig(data),
+        closeDB: () => db.close(),
+        destory: () => db.destory(),
+        refreshTraceId: () => db.refreshTraceId(),
+        injectBaseInfo: (data) => db.baseInfo.injectBaseInfo(data),
+        get: (msgid) => db.get(msgid),
+        getAll: () => db.getAll(),
+        refreshDurationStart: () => db.refreshDurationStart(),
+        filter: (filter: any) => db.filter(filter),
+        download: (filter: any) => db.download(filter),
+    };
+}
+
 export class WorkerDB extends DBBase {
     db: IDBDatabase;
     index: number;
-
+    msgMap: Record<TWorkerType, (data: any) => (Promise<any> | any)>;
 
     private STORE_NAME = 'records';
     // private KEY_NAME = 'log_id';
@@ -29,7 +48,7 @@ export class WorkerDB extends DBBase {
             this._initDB();
         }
         dbMap[this.name] = this;
-        console.log('init', this.baseInfo.data.traceid);
+        this.msgMap = createMessageMap(this);
     }
 
     add (data?: ILogData): Promise<null | ILogDBData> {
@@ -51,14 +70,9 @@ export class WorkerDB extends DBBase {
 
     private _addDBData (dbData: ILogDBData): Promise<ILogDBData | null> {
         return new Promise((resolve) => {
-            console.log('in add', this.baseInfo.data.traceid);
-            console.log('traceid', dbData.traceid);
-            const request = this.db.transaction([this.STORE_NAME], 'readwrite') // 新建事务，readwrite, readonly(默认), versionchange
-                .objectStore(this.STORE_NAME) // 拿到IDBObjectStore 对象
-                .add(dbData);
-            // console.log('写入数据');
+            // console.log('traceid', dbData.traceid);
+            const request = this._getStore('readwrite').add(dbData);
             request.onsuccess = function () {
-            // console.log('数据写入成功', event);
                 resolve(dbData);
             };
             request.onerror = function (event) {
@@ -66,6 +80,11 @@ export class WorkerDB extends DBBase {
                 resolve(null);
             };
         });
+    }
+
+    private _getStore (mode: IDBTransactionMode = 'readonly') {
+        return this.db.transaction([this.STORE_NAME], mode) // 新建事务，readwrite, readonly(默认), versionchange
+            .objectStore(this.STORE_NAME);
     }
 
     close () {
@@ -77,6 +96,92 @@ export class WorkerDB extends DBBase {
         this.close();
         globalThis.indexedDB.deleteDatabase(this.baseInfo.name);
         delete dbMap[this.name];
+    }
+    
+    get (logid: string): Promise<ILogDBData | null> {
+        return new Promise((resolve) => {
+            const request = this._getStore('readonly').get(logid); // 传主键
+            request.onerror = function () {
+                console.log('查询失败');
+                resolve(null);
+            };
+            request.onsuccess = function () {
+                if (request.result) {
+                    resolve(request.result);
+                } else {
+                    console.log('未查询到记录');
+                    resolve(null);
+                }
+            };
+        });
+    }
+
+    getAll (): Promise<ILogDBData[]> {
+        return new Promise((resolve) => {
+            const result: ILogDBData[] = [];
+            this._cursorBase({
+                onvalue (value) {result.push(value);},
+                onend () {resolve(result);},
+                onerror () {resolve([]);}
+            });
+        });
+    }
+
+    download (filter?: TFilterOption | string): Promise<string> {
+        filter = FuncFilter.transBack(filter);
+        return new Promise((resolve) => {
+            let result = '';
+            this._cursorBase({
+                onvalue (value) {
+                    if (checkValue(value, filter)) {
+                        result += `${dataToLogString(value)}\\n`;
+                    }
+                },
+                onend () {resolve(result);},
+                onerror () {resolve('');}
+            });
+        });
+    }
+
+    filter (filter?: TFilterOption | string): Promise<ILogDBData[]> {
+        filter = FuncFilter.transBack(filter);
+        return new Promise((resolve) => {
+            const result: ILogDBData[] = [];
+            this._cursorBase({
+                onvalue (value) {
+                    if (checkValue(value, filter)) {
+                        result.push(value);
+                    }
+                },
+                onend () {resolve(result);},
+                onerror () {resolve([]);}
+            });
+        });
+    }
+
+    private _cursorBase ({
+        onend, onvalue, onerror
+    }: {
+        onvalue: (d: ILogDBData) => void,
+        onend: ()=>void,
+        onerror: ()=>void,
+    }) {
+        const objectStore = this._getStore();
+        const cursorObject = objectStore.openCursor();
+        cursorObject.onsuccess = function (event) {
+            // 也可以在索引上打开 objectStore.index("id").openCursor()
+            const cursor: any = (event?.target as any).result;
+            if (cursor) {
+                onvalue(cursor.value);
+                cursor.continue();
+            } else {
+                onend();
+            }
+        };
+        cursorObject.onerror = () => {
+            console.error('查询失败');
+            onerror();
+        };
     }
 
     private _initDB () {
@@ -99,8 +204,7 @@ export class WorkerDB extends DBBase {
     private _checkCreateStore (db: IDBDatabase, id: string) {
         if (!db.objectStoreNames.contains(id)) {
             db.createObjectStore(id, {
-                // keyPath: this.KEY_NAME,
-                autoIncrement: true
+                keyPath: 'logid',
             });
         }
     }

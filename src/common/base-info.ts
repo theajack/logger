@@ -10,6 +10,8 @@ export class BaseInfo {
     static DEFAULT_DB_NAME_PREFIX = 'tc_logger';
     name: string;
 
+    durationStart: number;
+
     data: IBaseInfo = {
         uid: '',
         traceid: '',
@@ -35,8 +37,11 @@ export class BaseInfo {
 
     refreshTraceId () {
         this.data.traceid = uuid();
+        this.refreshDurationStart();
     }
-
+    refreshDurationStart () {
+        this.durationStart = Date.now();
+    }
     injectBaseInfo (baseInfo: IBaseInfoOption) {
         Object.assign(this.data, baseInfo);
     }
@@ -49,10 +54,12 @@ export class BaseInfo {
         const date = new Date();
         const timestamp = date.getTime();
         const time = dateToStr(date);
+        const duration = timestamp - this.durationStart;
         const result = Object.assign(data, this.data, {
             timestamp,
             time,
             logid: uuid(),
+            duration,
         });
 
         if (this.config.useConsole) {

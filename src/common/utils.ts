@@ -58,5 +58,25 @@ export function codeToBlob (code: string) {
 export function dataToLogString (data: ILogDBData) {
     const payload = typeof data.payload !== 'undefined' ? ` payload=${toLogString(data.payload)};` : '';
     const network = data.network ? ` network=${data.network};` : '';
-    return `[${data.time}]:${data.type === 'error' ? '[error]' : ''} msg=${data.msg}; uid=${data.uid}; traceid=${data.traceid}; logid=${data.logid}${network}${payload}`;
+    return `[${data.time}]:[${data.type}] msg=${data.msg};${payload} uid=${data.uid}; traceid=${data.traceid}; logid=${data.logid}; duration=${data.duration}; ${network} url=${data.url}; ua=${data.ua};`;
+}
+
+export function download ({
+    name,
+    content,
+    type = 'text/plain'
+}: {
+    name: string;
+    content: string;
+    type?: string;
+}) {
+    const downloadLink = document.createElement('a');
+    downloadLink.setAttribute('style', 'position: fixed;top: -100px');
+    document.body.appendChild(downloadLink);
+    downloadLink.setAttribute('download', name);
+        
+    const blob = new Blob([content], {type});
+    const url = URL.createObjectURL(blob);
+    downloadLink.href = url;
+    downloadLink.click();
 }
