@@ -10,12 +10,10 @@ import {checkValue} from '../filter-json/filter';
 import {dataToLogString} from '../common/utils';
 import {FuncFilter} from '../filter-json/func-filter';
 
+const dbMap: IJson<WorkerDB> = {};
 
-const dbMap: IJson<WorkerDB> = {
-
-};
-
-function createMessageMap (db: WorkerDB): Record<TWorkerType, (data: any) => (Promise<any> | any)> {
+function createMessageMap (db: WorkerDB):
+    Record<TWorkerType, (data: any) => (Promise<any> | any)> {
     return {
         add: (data) => db.add(data),
         injectConfig: (data) => db.baseInfo.injectConfig(data),

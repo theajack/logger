@@ -20,10 +20,10 @@ export abstract class DBBaseMethods {
     abstract close(): void;
     abstract destory(): void;
     abstract injectBaseInfo(data: IBaseInfoOption): void;
-    abstract get(logid: string): Promise<ILogDBData | null>;
-    abstract download(filter?: TFilterOption | string): Promise<string>;
-    abstract filter(filter?: TFilterOption | string): Promise<ILogDBData[]>;
-    abstract getAll(): Promise<ILogDBData[]>;
+    abstract get(logid: string): Promise<ILogDBData | null> | ILogDBData | null;
+    abstract download(filter?: TFilterOption | string): Promise<string> | string;
+    abstract filter(filter?: TFilterOption | string): Promise<ILogDBData[]> | ILogDBData[];
+    abstract getAll(): Promise<ILogDBData[]> | ILogDBData[];
     abstract refreshTraceId(): void;
     abstract refreshDurationStart(): void;
 }
@@ -34,6 +34,8 @@ export abstract class DBBase extends DBBaseMethods {
 
     useConsole: boolean;
 
+    storeType: TLogStoreType = 'idb';
+
     get name () {
         return this.baseInfo.name;
     }
@@ -42,7 +44,7 @@ export abstract class DBBase extends DBBaseMethods {
         super(data);
         this.baseInfo = new BaseInfo(data);
     }
-    abstract add (data?: ILogData): Promise<null | ILogDBData> | boolean;
+    abstract add (data?: ILogData): ILogDBData | null | Promise<null | ILogDBData> | boolean;
     injectBaseInfo (data: IBaseInfoOption) {
         this.baseInfo.injectBaseInfo(data);
     }

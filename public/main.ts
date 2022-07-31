@@ -9,6 +9,7 @@ const win = (window as any);
 
 const lg = new Logger({
     id: 'main',
+    storeType: 'storage',
     onReport (d) {
         console.warn('onReport', d);
     }

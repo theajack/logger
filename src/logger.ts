@@ -13,6 +13,7 @@ import {
 } from './type';
 import {DBBaseMethods, TFilterOption} from './common/db-base';
 import {WorkerStore} from './store/worker-store';
+import {StorageStore} from './store/storage';
 
 export class Logger {
 
@@ -49,24 +50,20 @@ export class Logger {
         onReport,
     }: IStoreConfig) {
         const canUseIndexedDB = !!window.Worker && !!window.indexedDB;
-        const canStorage = !!window.localStorage;
         const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport};
         
         if (storeType === 'idb' && canUseIndexedDB) {
             this.store = new WorkerStore(options);
-        } else if (storeType === 'storage' && canStorage) {
-            // todo 使用localStorage 代替indexedDB
-            // this.storage = new Storage(id);
-            // this.storage.baseInfo.injectConfig();
-        } else if (storeType === 'temp') {
-
         } else {
-            
+            this.store = new StorageStore({
+                ...options,
+                storeType
+            });
         }
     }
 
     private _initUid (uid?: string): string {
-        const KEY = 'tc_logger_uid';
+        const KEY = '_tc_logger_uid';
         if (uid) {
             window.localStorage.setItem(KEY, uid);
             return uid;
