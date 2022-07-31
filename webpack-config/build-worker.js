@@ -5,10 +5,4 @@
  */
 const configBase = require('./config.base');
 
-module.exports = {
-    watch: true,
-    watchOptions: {
-        ignored: /dist/
-    },
-    ...configBase.workerBase
-};
+module.exports = configBase.workerBase;

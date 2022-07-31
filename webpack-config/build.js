@@ -4,6 +4,7 @@
  * @Description: Coding something
  */
 const path = require('path');
+const configBase = require('./config.base');
 
 module.exports = () => {
     return {
@@ -11,36 +12,14 @@ module.exports = () => {
         entry: path.resolve('./', 'src/index.ts'),
         output: {
             path: path.resolve('./', 'dist'),
-            filename: 'ts-demo.min.js',
-            library: 'tsDemo',
+            filename: 'ts-logger.min.js',
+            library: 'TLogger',
             libraryTarget: 'umd',
             libraryExport: 'default',
         },
-        devtool: 'none',
-        resolve: {
-            extensions: [ '.tsx', '.ts', '.js' ]
-        },
-        externals: {},
+        resolve: configBase.resolve,
         module: {
-            rules: [{
-                test: /(.ts)$/,
-                use: {
-                    loader: 'ts-loader'
-                }
-            }, {
-                test: /(.js)$/,
-                use: [{
-                    loader: 'babel-loader',
-                }]
-            }, {
-                test: /(.js)$/,
-                loader: 'eslint-loader',
-                enforce: 'pre',
-                exclude: /node_modules/,
-                options: {
-                    configFile: './.eslintrc.js'
-                }
-            }]
+            rules: configBase.rules,
         }
     };
 };

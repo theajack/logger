@@ -4,6 +4,8 @@
  * @Description: Coding something
  */
 const path = require('path');
+const configBase = require('./config.base');
+
 module.exports = {
     mode: 'development',
     entry: path.resolve('./', 'public/main.ts'),
@@ -11,9 +13,7 @@ module.exports = {
         path: path.resolve('./', 'public'),
         filename: 'bundle.js'
     },
-    resolve: {
-        extensions: [ '.tsx', '.ts', '.js' ]
-    },
+    resolve: configBase.resolve,
     devtool: 'eval-source-map',
     devServer: {
         contentBase: path.resolve('./', 'public'),
@@ -25,24 +25,6 @@ module.exports = {
         },
     },
     module: {
-        rules: [{
-            test: /(.ts)$/,
-            use: {
-                loader: 'ts-loader'
-            }
-        }, {
-            test: /(.js)$/,
-            use: [{
-                loader: 'babel-loader',
-            }]
-        }, {
-            test: /(.js)$/,
-            loader: 'eslint-loader',
-            enforce: 'pre',
-            exclude: /node_modules/,
-            options: {
-                configFile: './.eslintrc.js'
-            }
-        }]
+        rules: configBase.rules
     }
 };

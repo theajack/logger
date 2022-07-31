@@ -12,6 +12,14 @@
     <title>Document</title>
 </head>
 <body>
-    <script src="./worker.min.js"></script>
+    <script src="./ts-logger.min.js"></script>
+    <script>
+        const lg = new TLogger.Logger({
+            id: 'main',
+            onReport (d) {
+                console.warn('onReport', d);
+            },
+        });
+    </script>
 </body>
 </html>

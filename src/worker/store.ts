@@ -90,12 +90,12 @@ export class WorkerDB extends DBBase {
     close () {
         this.db.close();
         this.db = undefined as any;
+        delete dbMap[this.name];
     }
 
     destory () {
         this.close();
         globalThis.indexedDB.deleteDatabase(this.baseInfo.name);
-        delete dbMap[this.name];
     }
     
     get (logid: string): Promise<ILogDBData | null> {
