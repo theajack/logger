@@ -95,6 +95,7 @@ export class WorkerDB extends DBBase {
 
     destory () {
         this.close();
+        // console.log('destory');
         globalThis.indexedDB.deleteDatabase(this.baseInfo.name);
     }
     
@@ -185,6 +186,7 @@ export class WorkerDB extends DBBase {
     }
 
     private _initDB () {
+        // console.log('_initDB:', this.name);
         const request = globalThis.indexedDB.open(this.name, 1);
         request.onerror = function (event) {
             console.error('数据库打开报错', event);
@@ -192,10 +194,10 @@ export class WorkerDB extends DBBase {
         request.onsuccess = () => {
             this.db = request.result as IDBDatabase;
             this.loadCallbacks.forEach(fn => fn());
-            // console.log('数据库打开成功', this, event);
+            console.log('数据库打开成功: ', this.baseInfo.name);
         };
         request.onupgradeneeded = (event) => {
-            // console.warn('onupgradeneeded', event);
+            // console.log('数据库onupgradeneeded', event);
             const db = (event.target as any)?.result as IDBDatabase;
             this._checkCreateStore(db, this.STORE_NAME);
         };

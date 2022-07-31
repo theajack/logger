@@ -26,7 +26,7 @@ export class Logger {
         maxRecords = 0,
         baseInfo,
         onReport,
-    }: ILoggerOption) {
+    }: ILoggerOption = {}) {
         if (!id) throw new Error('Logger id is required');
         
         this._initStore({

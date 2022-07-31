@@ -13,6 +13,8 @@
 </head>
 <body>
     <script src="./ts-logger.min.js"></script>
+    <input type="text" id="dd">
+    <button onclick="aa()">test</button>
     <script>
         const lg = new TLogger.Logger({
             id: 'main',
@@ -20,6 +22,9 @@
                 console.warn('onReport', d);
             },
         });
+        function aa(){
+            dd.value = 'test'
+        }
     </script>
 </body>
 </html>
