@@ -1,4 +1,5 @@
-import {IBaseInfo, IBaseInfoOption, IBaseInfoParam, IDBConfig, ILogData, ILogDBData} from '../type';
+import {IBaseInfo, IBaseInfoOption, IBaseInfoParam, IDBConfig, ILogDBData, IMessageData} from '../type';
+import {TLog} from './t-log';
 import {dataToLogString, dateToStr, uuid} from './utils';
 
 /*
@@ -22,7 +23,7 @@ export class BaseInfo {
 
     config: IDBConfig = {
         useConsole: true,
-        maxRecords: -1, // todo
+        maxRecords: -1,
     };
 
     constructor ({
@@ -50,7 +51,7 @@ export class BaseInfo {
         Object.assign(this.config, data);
     }
 
-    appendBaseInfo (data: ILogData): ILogDBData {
+    appendBaseInfo (data: IMessageData): ILogDBData {
         const date = new Date();
         const timestamp = date.getTime();
         const time = dateToStr(date);
@@ -64,7 +65,7 @@ export class BaseInfo {
 
         if (this.config.useConsole) {
             const str = dataToLogString(result);
-            const fn = (console as any)[result.type] || console.log;
+            const fn = TLog[result.type] || console.log;
             fn(str);
         }
 

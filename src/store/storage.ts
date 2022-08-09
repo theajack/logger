@@ -5,10 +5,11 @@
  * @Description: Coding something
  */
 import {BaseInfo} from '../common/base-info';
-import {DBBase, TFilterOption} from '../common/db-base';
+import {DBBase, IAddReturn, TFilterOption} from '../common/db-base';
 import {dataToLogString} from '../common/utils';
+import {TLog} from '../common/t-log';
 import {checkValue} from '../filter-json/filter';
-import {IBaseInfoParam, ILogData, ILogDBData, TLogStoreType} from '../type';
+import {IBaseInfoParam, ILogDBData, IMessageData, TLogStoreType} from '../type';
 
 export class StorageStore extends DBBase {
 
@@ -29,6 +30,8 @@ export class StorageStore extends DBBase {
     constructor (data: IBaseInfoParam & {storeType: TLogStoreType}) {
         super(data);
         this.key = `${BaseInfo.DEFAULT_DB_NAME_PREFIX}_${data.id}`;
+        this.onDiscard = data.onDiscard;
+        this.onReport = data.onReport;
         this._initStoreType(data.storeType);
         this.data = this._getAll();
     }
@@ -50,21 +53,35 @@ export class StorageStore extends DBBase {
 
     private _saveAll () {
         if (this.useStorage) {
-            localStorage.setItem(this.key, JSON.stringify(this.data));
+            try {
+                localStorage.setItem(this.key, JSON.stringify(this.data));
+            } catch (e) {
+                TLog.warn('localStorage 存储失败', e);
+            }
         }
     }
 
-    add (data: ILogData): ILogDBData | null {
-        if (!data) {
-            console.warn('add: data is required');
-            return null;
-        }
+    add (data: IMessageData): IAddReturn {
         const dbData = this.baseInfo.appendBaseInfo(data);
+        let discard: ILogDBData | null = null;
         if (this.useTemp || this.useStorage) {
+            const max = this.baseInfo.config.maxRecords;
+            if (this.data.length > max) {
+                const item = this.data.shift();
+                if (item) {
+                    discard = item;
+                    if (this.onDiscard) this.onDiscard(dbData);
+                    TLog.warn(`达到最大存储数量：${max}; 已丢弃最早的记录：`, item);
+                }
+            }
+            if (this.onReport) this.onReport(dbData);
             this.data.push(dbData);
             this._saveAll();
         }
-        return dbData;
+        return {
+            discard,
+            add: dbData
+        };
     }
 
     close () {
@@ -72,11 +89,28 @@ export class StorageStore extends DBBase {
     }
     destory () {
         this.data = [];
-        this._saveAll();
+        localStorage.removeItem(this.key);
     }
     get (logid: string): ILogDBData | null {
         if (this.noStore) return null;
         return this.data.find(d => d.logid === logid) || null;
+    }
+
+    clear (): boolean {
+        this.data = [];
+        this._saveAll();
+        return true;
+    }
+    delete (logid: string) {
+        const index = this.data.findIndex(item => item.logid === logid);
+
+        if (index === -1) return false;
+        this.data.splice(index, 1);
+        this._saveAll();
+        return true;
+    }
+    count (): number {
+        return this.data.length;
     }
 
     download (filter?: TFilterOption | string): string {

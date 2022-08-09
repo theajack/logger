@@ -3,7 +3,7 @@
  * @Date: 2022-07-30 13:28:38
  * @Description: Coding something
  */
-import {DBBaseMethods, TFilterOption} from '../common/db-base';
+import {DBBaseMethods, IAddReturn, TFilterOption} from '../common/db-base';
 import {codeToBlob, transformDOM} from '../common/utils';
 import {IBaseInfoOption, IBaseInfoParam, IJson, ILogDBData, IMessageData, IWorkerBackMessage, TWorkerType} from '../type';
 import WorkerCode from '../worker/dist/worker.min';
@@ -18,19 +18,20 @@ if (window.Worker) {
 
 export class WorkerStore extends DBBaseMethods {
     id: string;
-    onReport?: (data: ILogDBData) => void;
     resolveMap: IJson<Function> = {};
     constructor ({
         id,
         useConsole,
         maxRecords,
-        onReport
+        onReport,
+        onDiscard,
     }: IBaseInfoParam) {
         super({
             id,
             useConsole,
             maxRecords,
         });
+        this.onDiscard = onDiscard;
         this.onReport = onReport;
 
         this.id = id;
@@ -50,9 +51,14 @@ export class WorkerStore extends DBBaseMethods {
 
     private _onMessage (data: IWorkerBackMessage) {
         if (data.type === 'add') {
-            // console.log('onmessage: id = ', this.id, data );
-            if (this.onReport) {
-                this.onReport(data.result as ILogDBData);
+            const result = data.result;
+            if (result) {
+                if (result.__type === 'discard') {
+                    if (this.onReport) this.onReport(result?.add as ILogDBData);
+                    if (this.onDiscard) this.onDiscard(result?.discard as ILogDBData);
+                } else {
+                    if (this.onReport) { this.onReport(result as ILogDBData);}
+                }
             }
         }
         const resolve = this.resolveMap[data.msgid];
@@ -66,7 +72,7 @@ export class WorkerStore extends DBBaseMethods {
         this._postMessage('injectBaseInfo', baseInfo);
     }
 
-    async add (data: IMessageData): Promise<ILogDBData> {
+    async add (data: IMessageData): Promise<IAddReturn> {
         return (await this._postMessage('add', this._transformPayload(data))).result;
     }
     close () {
@@ -74,6 +80,16 @@ export class WorkerStore extends DBBaseMethods {
     }
     destory () {
         return this._postMessage('destory');
+    }
+
+    async count (): Promise<number> {
+        return (await this._postMessage('count')).result;
+    }
+    clear () {
+        return this._postMessage('clear');
+    }
+    delete (logid: string) {
+        return this._postMessage('delete', logid);
     }
 
     refreshTraceId () {

@@ -18,6 +18,6 @@ globalThis.addEventListener('message', async function (
     if (result instanceof Promise) {
         result = await result;
     }
-    // console.log(globalThis, globalThis.localStorage);
+    // TLog.log(globalThis, globalThis.localStorage);
     (globalThis.postMessage as any)({msgid, id, type, result} as IWorkerBackMessage);
 }, false);

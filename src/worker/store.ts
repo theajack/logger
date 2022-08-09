@@ -4,11 +4,12 @@
  * @Description: Coding something
  */
 
-import {IJson, ILogData, ILogDBData, TWorkerType} from '../type';
-import {DBBase, TFilterOption} from '../common/db-base';
+import {IJson, ILogDBData, IMessageData, TWorkerType} from '../type';
+import {DBBase, IAddReturn, TFilterOption} from '../common/db-base';
 import {checkValue} from '../filter-json/filter';
 import {dataToLogString} from '../common/utils';
 import {FuncFilter} from '../filter-json/func-filter';
+import {TLog} from '../common/t-log';
 
 const dbMap: IJson<WorkerDB> = {};
 
@@ -26,6 +27,9 @@ function createMessageMap (db: WorkerDB):
         refreshDurationStart: () => db.refreshDurationStart(),
         filter: (filter: any) => db.filter(filter),
         download: (filter: any) => db.download(filter),
+        count: () => db.count(),
+        delete: (msgid) => db.delete(msgid),
+        clear: () => db.clear(),
     };
 }
 
@@ -49,10 +53,10 @@ export class WorkerDB extends DBBase {
         this.msgMap = createMessageMap(this);
     }
 
-    add (data?: ILogData): Promise<null | ILogDBData> {
-        return new Promise(async (resolve) => {
+    add (data?: IMessageData) {
+        return new Promise<IAddReturn>(async (resolve) => {
             if (!data) {
-                console.warn('add: data is required');
+                TLog.warn('add: data is required');
                 return null;
             }
             const dbData: ILogDBData = this.baseInfo.appendBaseInfo(data);
@@ -66,15 +70,29 @@ export class WorkerDB extends DBBase {
         });
     }
 
-    private _addDBData (dbData: ILogDBData): Promise<ILogDBData | null> {
-        return new Promise((resolve) => {
-            // console.log('traceid', dbData.traceid);
+    private _addDBData (dbData: ILogDBData) {
+        return new Promise<IAddReturn>(async (resolve) => {
+            // TLog.log('traceid', dbData.traceid);
             const request = this._getStore('readwrite').add(dbData);
-            request.onsuccess = function () {
-                resolve(dbData);
+
+            // {
+            //     __type: 'discard',
+            //     discard: ILogDBData,
+            //     add: ILogDBData,
+            // }
+            request.onsuccess = async () => {
+                const n = await this.count();
+                let discard: ILogDBData | null = null;
+                if (n > this.baseInfo.config.maxRecords) {
+                    discard = await this._removeFirst();
+                }
+                resolve({
+                    discard,
+                    add: dbData,
+                });
             };
-            request.onerror = function (event) {
-                console.log('数据写入失败', event);
+            request.onerror = (event) => {
+                TLog.error('数据写入失败', event);
                 resolve(null);
             };
         });
@@ -85,6 +103,21 @@ export class WorkerDB extends DBBase {
             .objectStore(this.STORE_NAME);
     }
 
+    clear () {
+        return new Promise<boolean>((resolve) => {
+            const objectStore = this._getStore('readwrite');
+            const request = objectStore.clear();
+            request.onsuccess = function () {
+                TLog.log('清除数据成功');
+                resolve(true);
+            };
+            request.onerror = function () {
+                TLog.warn('清除数据成功');
+                resolve(false);
+            };
+        });
+    }
+
     close () {
         this.db.close();
         this.db = undefined as any;
@@ -93,30 +126,30 @@ export class WorkerDB extends DBBase {
 
     destory () {
         this.close();
-        // console.log('destory');
+        TLog.info('数据库已销毁');
         globalThis.indexedDB.deleteDatabase(this.baseInfo.name);
     }
     
-    get (logid: string): Promise<ILogDBData | null> {
-        return new Promise((resolve) => {
-            const request = this._getStore('readonly').get(logid); // 传主键
+    get (logid: string) {
+        return new Promise<ILogDBData | null>((resolve) => {
+            const request = this._getStore('readonly').index('logid').get(logid); // 传主键
             request.onerror = function () {
-                console.log('查询失败');
+                TLog.error('数据查询失败', logid);
                 resolve(null);
             };
             request.onsuccess = function () {
                 if (request.result) {
                     resolve(request.result);
                 } else {
-                    console.log('未查询到记录');
+                    TLog.warn('未查询到记录', logid);
                     resolve(null);
                 }
             };
         });
     }
 
-    getAll (): Promise<ILogDBData[]> {
-        return new Promise((resolve) => {
+    getAll () {
+        return new Promise<ILogDBData[]>((resolve) => {
             const result: ILogDBData[] = [];
             this._cursorBase({
                 onvalue (value) {result.push(value);},
@@ -126,9 +159,9 @@ export class WorkerDB extends DBBase {
         });
     }
 
-    download (filter?: TFilterOption | string): Promise<string> {
+    download (filter?: TFilterOption | string) {
         filter = FuncFilter.transBack(filter);
-        return new Promise((resolve) => {
+        return new Promise<string>((resolve) => {
             let result = '';
             this._cursorBase({
                 onvalue (value) {
@@ -142,9 +175,9 @@ export class WorkerDB extends DBBase {
         });
     }
 
-    filter (filter?: TFilterOption | string): Promise<ILogDBData[]> {
+    filter (filter?: TFilterOption | string) {
         filter = FuncFilter.transBack(filter);
-        return new Promise((resolve) => {
+        return new Promise<ILogDBData[]>((resolve) => {
             const result: ILogDBData[] = [];
             this._cursorBase({
                 onvalue (value) {
@@ -155,6 +188,80 @@ export class WorkerDB extends DBBase {
                 onend () {resolve(result);},
                 onerror () {resolve([]);}
             });
+        });
+    }
+
+    count () {
+        return new Promise<number>((resolve) => {
+            const objectStore = this._getStore();
+
+            const index = objectStore.index('logid');
+            const countRequest = index.count();
+            countRequest.onsuccess = () => {
+                resolve(countRequest.result);
+            };
+            countRequest.onerror = () => {
+                resolve(-1);
+            };
+        });
+    }
+
+    private _getKey (logid: string) {
+        return new Promise<number>(async (resolve) => {
+            const objectStore = this._getStore('readonly');
+            const request = objectStore.index('logid').getKey(logid);
+            request.onsuccess = (event) => {
+                resolve((event?.target as any)?.result || -1);
+            };
+            request.onerror = (event) => {
+                TLog.warn('getKey error', event);
+                resolve(-1);
+            };
+        });
+    }
+
+    delete (logid: string) {
+        return new Promise<boolean>(async (resolve) => {
+            const key = await this._getKey(logid);
+            
+            if (key === -1) {
+                TLog.warn('删除失败, 记录不存在：', logid);
+                resolve(false);
+                return;
+            }
+            const objectStore = this._getStore('readwrite');
+            const request = objectStore.delete(key);
+            request.onsuccess = function (event) {
+                console.log(logid, event);
+                resolve(true);
+            };
+            request.onerror = function (event) {
+                resolve(false);
+                TLog.warn('删除日志失败', event);
+            };
+        });
+    }
+
+    private _removeFirst () {
+        return new Promise<ILogDBData | null>((resolve) => {
+            const objectStore = this._getStore('readwrite');
+            const cursorObject = objectStore.openCursor();
+            cursorObject.onsuccess = (event) => {
+            // 也可以在索引上打开 objectStore.index("id").openCursor()
+                const cursor: any = (event?.target as any).result;
+                console.warn(cursor, cursor?.value);
+                if (cursor) {
+                    cursor.delete();
+                    resolve(cursor.value);
+                } else {
+                    resolve(null);
+                    TLog.warn('移除最早记录失败, cursor = null', event);
+                }
+            };
+            cursorObject.onerror = (event) => {
+                TLog.warn('移除最早记录失败', event);
+                resolve(null);
+            };
         });
     }
 
@@ -178,24 +285,24 @@ export class WorkerDB extends DBBase {
             }
         };
         cursorObject.onerror = () => {
-            console.error('查询失败');
+            TLog.error('查询失败');
             onerror();
         };
     }
 
     private _initDB () {
-        // console.log('_initDB:', this.name);
+        // TLog.log('_initDB:', this.name);
         const request = globalThis.indexedDB.open(this.name, 1);
         request.onerror = function (event) {
-            console.error('数据库打开报错', event);
+            TLog.error('数据库打开失败', event);
         };
         request.onsuccess = () => {
             this.db = request.result as IDBDatabase;
             this.loadCallbacks.forEach(fn => fn());
-            console.log('数据库打开成功: ', this.baseInfo.name);
+            // TLog.log('数据库打开成功: ', this.baseInfo.name);
         };
         request.onupgradeneeded = (event) => {
-            // console.log('数据库onupgradeneeded', event);
+            // TLog.log('数据库onupgradeneeded', event);
             const db = (event.target as any)?.result as IDBDatabase;
             this._checkCreateStore(db, this.STORE_NAME);
         };
@@ -203,9 +310,10 @@ export class WorkerDB extends DBBase {
 
     private _checkCreateStore (db: IDBDatabase, id: string) {
         if (!db.objectStoreNames.contains(id)) {
-            db.createObjectStore(id, {
-                keyPath: 'logid',
+            const store = db.createObjectStore(id, {
+                autoIncrement: true,
             });
+            store.createIndex('logid', 'logid', {unique: true});
         }
     }
 

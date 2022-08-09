@@ -5,7 +5,7 @@
  */
 import {
     IJson, IBaseInfoOption, IMessageData, TLogType,
-    ILogDBData, IBaseInfoParam, IStoreConfig
+    IBaseInfoParam, IStoreConfig, TLogStoreType
 } from './type';
 import {dateToStr, download, uuid} from './common/utils';
 import {
@@ -15,70 +15,45 @@ import {DBBaseMethods, TFilterOption} from './common/db-base';
 import {WorkerStore} from './store/worker-store';
 import {StorageStore} from './store/storage';
 
-export class Logger {
+type IITest = {
+    [prop in TLogStoreType]: DBBaseMethods;
+}
+export interface ITest extends IITest {
+    idb: DBBaseMethods;
+    storage: StorageStore;
+}
 
-    store: DBBaseMethods;
+export class Logger<T extends DBBaseMethods = DBBaseMethods> {
+
+    store: T;
     id: string;
 
     constructor ({
         id = 'default',
         useConsole = true,
         storeType = 'idb',
-        maxRecords = 0,
+        maxRecords = 50000,
         baseInfo,
         onReport,
+        onDiscard,
     }: ILoggerOption = {}) {
         if (!id) throw new Error('Logger id is required');
         
-        this._initStore({
+        this.store = LoggerHelper.initStore({
             id,
             storeType,
             maxRecords,
             useConsole,
             onReport,
-        });
+            onDiscard,
+        }) as T;
 
         this.id = id;
         this.injectBaseInfo(baseInfo);
     }
 
-    private _initStore ({
-        id,
-        storeType,
-        maxRecords,
-        useConsole,
-        onReport,
-    }: IStoreConfig) {
-        const canUseIndexedDB = !!window.Worker && !!window.indexedDB;
-        const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport};
-        
-        if (storeType === 'idb' && canUseIndexedDB) {
-            this.store = new WorkerStore(options);
-        } else {
-            this.store = new StorageStore({
-                ...options,
-                storeType
-            });
-        }
-    }
-
-    private _initUid (uid?: string): string {
-        const KEY = '_tc_logger_uid';
-        if (uid) {
-            window.localStorage.setItem(KEY, uid);
-            return uid;
-        } else {
-            let uid = window.localStorage.getItem(KEY);
-            if (!uid) {
-                uid = uuid();
-                window.localStorage.setItem(KEY, uid);
-            }
-            return uid;
-        }
-    }
-
     injectBaseInfo (baseInfo: IBaseInfoOption & IJson = {}) {
-        baseInfo.uid = this._initUid(baseInfo?.uid);
+        baseInfo.uid = LoggerHelper.initUid(baseInfo?.uid);
         baseInfo.url = baseInfo.url || window.location.href;
         baseInfo.ua = baseInfo.ua || window.navigator.userAgent;
         this.store.injectBaseInfo(baseInfo);
@@ -96,24 +71,24 @@ export class Logger {
     info (...args: any[]) {
         return this._logCommon(args, 'info');
     }
-
-    private _logCommon (args: any[], type: TLogType): Promise<ILogDBData> {
-        const {msg, payload} = this._shapeArgs(args);
-        const data = this._buildLogData(msg, payload, type);
+    _logCommon (args: any[], type: TLogType) {
+        const data = LoggerHelper.buildLogData(args, type);
         return this.store.add(data);
-
     }
-
-    private _shapeArgs (args: any[]) {
-        if (typeof args[0] === 'string') {
-            const msg = args[0];
-            let payload = args.slice(1);
-            if (payload.length === 1) {
-                payload = payload[0];
-            }
-            return {msg, payload};
-        }
-        return {msg: '__def__', payload: args};
+    close () {
+        return this.store.close();
+    }
+    destory () {
+        return this.store.destory();
+    }
+    clear () {
+        return this.store.clear();
+    }
+    count () {
+        return this.store.count();
+    }
+    delete (logid: string) {
+        return this.store.delete(logid);
     }
 
     refreshTraceId () {
@@ -140,6 +115,7 @@ export class Logger {
             name: `${name}.log`,
             content: data
         });
+        return data.length;
     }
 
     get (logid: string) {
@@ -157,12 +133,57 @@ export class Logger {
         }
         return this.store.filter(filter);
     }
+}
 
-    private _buildLogData (msg: string, payload?: any, type: TLogType = 'log'): IMessageData {
-        return {
+const LoggerHelper = {
+    buildLogData (args: any[], type: TLogType = 'log'): IMessageData {
+        let msg = '__def__';
+        let payload: any = args;
+        if (typeof args[0] === 'string') {
+            msg = args[0];
+            payload = args.slice(1);
+        }
+        const data: IMessageData = {
             msg,
-            payload,
             type,
         };
+        if (payload.length > 0) {
+            data.payload = payload;
+        }
+        return data;
+    },
+    initUid (uid?: string): string {
+        const KEY = '_tc_logger_uid';
+        if (uid) {
+            window.localStorage.setItem(KEY, uid);
+            return uid;
+        } else {
+            let uid = window.localStorage.getItem(KEY);
+            if (!uid) {
+                uid = uuid();
+                window.localStorage.setItem(KEY, uid);
+            }
+            return uid;
+        }
+    },
+    initStore ({
+        id,
+        storeType,
+        maxRecords,
+        useConsole,
+        onReport,
+        onDiscard,
+    }: IStoreConfig): DBBaseMethods {
+        const canUseIndexedDB = !!window.Worker && !!window.indexedDB;
+        const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport, onDiscard};
+        
+        if (storeType === 'idb' && canUseIndexedDB) {
+            return new WorkerStore(options);
+        } else {
+            return new StorageStore({
+                ...options,
+                storeType
+            });
+        }
     }
-}
+};

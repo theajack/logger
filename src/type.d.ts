@@ -58,9 +58,10 @@ export interface IStoreConfig {
     storeType: TLogStoreType; // 存储类型
     maxRecords: number; // 最大日志数量 默认不限制
     onReport?: (data: ILogDBData) => void;
+    onDiscard?: (data: ILogDBData) => void;
 }
 
-export type IBaseInfoParam = Pick<IStoreConfig, 'id' | 'useConsole' | 'maxRecords' | 'onReport'>
+export type IBaseInfoParam = Pick<IStoreConfig, 'id' | 'useConsole' | 'maxRecords' | 'onReport' | 'onDiscard'>
 
 export type IStoreConfigOption = Partial<IStoreConfig>
 
@@ -72,7 +73,7 @@ export type IDBConfig  = Pick<IStoreConfig, 'useConsole' | 'maxRecords'>
 
 export type TWorkerType = 'closeDB' | 'add' | 'injectBaseInfo'
     | 'refreshTraceId' | 'refreshDurationStart' | 'injectConfig' | 'destory'
-    | 'get' | 'getAll' | 'filter' | 'download';
+    | 'get' | 'getAll' | 'filter' | 'download' | 'count' | 'delete' | 'clear';
 
 export interface IWorkerMessageCommon {
     msgid: string;

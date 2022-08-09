@@ -58,7 +58,7 @@ export function codeToBlob (code: string) {
 export function dataToLogString (data: ILogDBData) {
     const payload = typeof data.payload !== 'undefined' ? ` payload=${toLogString(data.payload)};` : '';
     const network = data.network ? ` network=${data.network};` : '';
-    return `[${data.time}]:[${data.type}] msg=${data.msg};${payload} uid=${data.uid}; traceid=${data.traceid}; logid=${data.logid}; duration=${data.duration}; ${network} url=${data.url}; ua=${data.ua};`;
+    return `[${data.time}] type=${data.type}; msg=${data.msg};${payload} uid=${data.uid}; traceid=${data.traceid}; logid=${data.logid}; duration=${data.duration}; ${network} url=${data.url}; ua=${data.ua};`;
 }
 
 export function download ({
@@ -80,3 +80,4 @@ export function download ({
     downloadLink.href = url;
     downloadLink.click();
 }
+

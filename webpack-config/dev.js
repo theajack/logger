@@ -16,6 +16,7 @@ module.exports = {
     resolve: configBase.resolve,
     devtool: 'eval-source-map',
     devServer: {
+        port: 8083,
         contentBase: path.resolve('./', 'public'),
         historyApiFallback: true,
         inline: true,
