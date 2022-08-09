@@ -11,6 +11,8 @@ import {dataToLogString} from '../common/utils';
 import {FuncFilter} from '../filter-json/func-filter';
 import {TLog} from '../common/t-log';
 
+const INDEX_NAME = 'logid';
+
 const dbMap: IJson<WorkerDB> = {};
 
 function createMessageMap (db: WorkerDB):
@@ -122,7 +124,7 @@ export class WorkerDB extends DBBase {
         this.db.close();
         this.db = undefined as any;
         delete dbMap[this.name];
-        return true;
+        return Promise.resolve(true);
     }
 
     destory () {
@@ -142,7 +144,7 @@ export class WorkerDB extends DBBase {
     
     get (logid: string) {
         return new Promise<ILogDBData | null>((resolve) => {
-            const request = this._getStore('readonly').index('logid').get(logid); // 传主键
+            const request = this._getStore('readonly').index(INDEX_NAME).get(logid); // 传主键
             request.onerror = function () {
                 TLog.error('数据查询失败', logid);
                 resolve(null);
@@ -207,7 +209,7 @@ export class WorkerDB extends DBBase {
         return new Promise<number>((resolve) => {
             const objectStore = this._getStore();
 
-            const index = objectStore.index('logid');
+            const index = objectStore.index(INDEX_NAME);
             const countRequest = index.count();
             countRequest.onsuccess = () => {
                 resolve(countRequest.result);
@@ -221,7 +223,7 @@ export class WorkerDB extends DBBase {
     private _getKey (logid: string) {
         return new Promise<number>(async (resolve) => {
             const objectStore = this._getStore('readonly');
-            const request = objectStore.index('logid').getKey(logid);
+            const request = objectStore.index(INDEX_NAME).getKey(logid);
             request.onsuccess = (event) => {
                 resolve((event?.target as any)?.result || -1);
             };
@@ -324,7 +326,7 @@ export class WorkerDB extends DBBase {
             const store = db.createObjectStore(id, {
                 autoIncrement: true,
             });
-            store.createIndex('logid', 'logid', {unique: true});
+            store.createIndex(INDEX_NAME, INDEX_NAME, {unique: true});
         }
     }
 

@@ -69,7 +69,7 @@ export class WorkerStore extends DBBaseMethods {
     }
 
     injectBaseInfo (baseInfo: IBaseInfoOption) {
-        this._postMessage('injectBaseInfo', baseInfo);
+        return this._postMessage('injectBaseInfo', baseInfo);
     }
 
     async add (data: IMessageData): Promise<IAddReturn> {

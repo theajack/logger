@@ -5,27 +5,21 @@
  */
 import {
     IJson, IBaseInfoOption, IMessageData, TLogType,
-    IBaseInfoParam, IStoreConfig, ILogDBData
+    IBaseInfoParam, IStoreConfig, TLogStoreType
 } from './type';
 import {dateToStr, download, uuid} from './common/utils';
 import {
     ILoggerOption,
 } from './type';
-import {DBBaseMethods, IAddReturn, TFilterOption, TSyncType} from './common/db-base';
+import {DBBaseMethods, TFilterOption} from './common/db-base';
 import {WorkerStore} from './store/worker-store';
 import {StorageStore} from './store/storage';
 
-interface ISyncStore {
-    async: DBBaseMethods;
-    sync: StorageStore;
-}
+class Logger {
 
-type TLoggerReturn<T, K> = (T extends 'async' ? Promise<K> : K)
-
-export class Logger<T extends TSyncType = 'async'> {
-
-    private _store: ISyncStore[T];
+    private _store: DBBaseMethods;
     id: string;
+    storeType: TLogStoreType;
 
     constructor ({
         id = 'default',
@@ -36,9 +30,8 @@ export class Logger<T extends TSyncType = 'async'> {
         onReport,
         onDiscard,
     }: ILoggerOption = {}) {
-        if (!id) throw new Error('Logger id is required');
         
-        this._store = this._initStore({
+        this._store = LoggerHelper.initStore({
             id,
             storeType,
             maxRecords,
@@ -47,15 +40,18 @@ export class Logger<T extends TSyncType = 'async'> {
             onDiscard,
         });
 
+        this.storeType = this._store.type;
+
         this.id = id;
         this.injectBaseInfo(baseInfo);
     }
 
     injectBaseInfo (baseInfo: IBaseInfoOption & IJson = {}) {
-        baseInfo.uid = LoggerHelper.initUid(baseInfo?.uid);
+        baseInfo.uid = LoggerHelper.initUUid('_tc_logger_uid', baseInfo?.uid);
+        baseInfo.clientid = LoggerHelper.initUUid('_tc_logger_clientid', baseInfo?.clientid);
         baseInfo.url = baseInfo.url || window.location.href;
         baseInfo.ua = baseInfo.ua || window.navigator.userAgent;
-        return this._store.injectBaseInfo(baseInfo) as TLoggerReturn<T, void>;
+        return this._store.injectBaseInfo(baseInfo);
     }
 
     log (...args: any[]) {
@@ -72,63 +68,54 @@ export class Logger<T extends TSyncType = 'async'> {
     }
     private _logCommon (args: any[], type: TLogType) {
         const data = LoggerHelper.buildLogData(args, type);
-        return this._store.add(data) as TLoggerReturn<T, IAddReturn>;
+        return this._store.add(data);
     }
     close () {
-        return this._store.close() as TLoggerReturn<T, boolean>;
+        return this._store.close();
     }
     destory () {
-        return this._store.destory() as TLoggerReturn<T, boolean>;
+        return this._store.destory();
     }
     clear () {
-        return this._store.clear() as TLoggerReturn<T, boolean>;
+        return this._store.clear();
     }
     count () {
-        return this._store.count() as TLoggerReturn<T, number>;
+        return this._store.count();
     }
     delete (logid: string) {
-        return this._store.delete(logid) as TLoggerReturn<T, boolean>;
+        return this._store.delete(logid);
     }
 
     refreshTraceId () {
-        return this._store.refreshTraceId() as TLoggerReturn<T, void>;
+        return this._store.refreshTraceId();
     }
 
     refreshDurationStart () {
-        return this._store.refreshDurationStart() as TLoggerReturn<T, void>;
+        return this._store.refreshDurationStart();
     }
 
     // 下载日志
-    download ({
+    async download ({
         name, filter
     }:{
         name?: string;
         filter?: TFilterOption
-    } = {}): TLoggerReturn<T, number> {
+    } = {}) {
 
         if (!name) name = dateToStr(new Date(), '_');
         
-        const data = this._store.download(filter);
+        const {content, count} = await this._store.download(filter);
 
-        if (data instanceof Promise) {
-            return new Promise(resolve => {
-                data.then(({content, count}) => {
-                    download({name: `${name}.log`, content});
-                    resolve(count);
-                });
-            }) as TLoggerReturn<T, number>;
-        } else {
-            download({name: `${name}.log`, content: data.content});
-            return data.count as TLoggerReturn<T, number>;
-        }
+        download({name: `${name}.log`, content});
+        return count;
     }
 
     get (logid: string) {
-        return this._store.get(logid) as TLoggerReturn<T, ILogDBData | null>;
+        return this._store.get(logid);
     }
 
     getAll () {
-        return this._store.getAll() as TLoggerReturn<T, ILogDBData[]>;
+        return this._store.getAll();
     }
 
 
@@ -136,27 +123,7 @@ export class Logger<T extends TSyncType = 'async'> {
         if (!filter) {
             return this.getAll();
         }
-        return this._store.filter(filter) as TLoggerReturn<T, ILogDBData[]>;
-    }
-    private _initStore ({
-        id,
-        storeType,
-        maxRecords,
-        useConsole,
-        onReport,
-        onDiscard,
-    }: IStoreConfig): ISyncStore[T] {
-        const canUseIndexedDB = !!window.Worker && !!window.indexedDB;
-        const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport, onDiscard};
-        
-        if (storeType === 'idb' && canUseIndexedDB) {
-            return new WorkerStore(options) as any;
-        } else {
-            return new StorageStore({
-                ...options,
-                storeType
-            });
-        }
+        return this._store.filter(filter);
     }
 }
 
@@ -177,18 +144,39 @@ const LoggerHelper = {
         }
         return data;
     },
-    initUid (uid?: string): string {
-        const KEY = '_tc_logger_uid';
-        if (uid) {
-            window.localStorage.setItem(KEY, uid);
-            return uid;
+    initUUid (key: string, id?: string): string {
+        if (id) {
+            window.localStorage.setItem(key, id);
+            return id;
         } else {
-            let uid = window.localStorage.getItem(KEY);
-            if (!uid) {
-                uid = uuid();
-                window.localStorage.setItem(KEY, uid);
+            let id = window.localStorage.getItem(key);
+            if (!id) {
+                id = uuid();
+                window.localStorage.setItem(key, id);
             }
-            return uid;
+            return id;
+        }
+    },
+    initStore ({
+        id,
+        storeType,
+        maxRecords,
+        useConsole,
+        onReport,
+        onDiscard,
+    }: IStoreConfig) {
+        const canUseIndexedDB = !!window.Worker && !!window.indexedDB;
+        const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport, onDiscard};
+        
+        if (storeType === 'idb' && canUseIndexedDB) {
+            return new WorkerStore(options);
+        } else {
+            return new StorageStore({
+                ...options,
+                storeType
+            });
         }
     }
 };
+
+export default Logger;

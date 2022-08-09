@@ -16,10 +16,6 @@ export interface IDownloadInfo {
     count: number;
 }
 
-export type TSyncType = 'async' | 'sync';
-
-type DBAsyncReturn<T = any> = Promise<T> | T;
-
 export type IAddReturn = {
     discard: ILogDBData | null;
     add: ILogDBData;
@@ -30,20 +26,20 @@ export abstract class DBBaseMethods {
     onReport?: (data: ILogDBData) => void;
     onDiscard?: (data: ILogDBData) => void;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    constructor (data: IBaseInfoParam) {}
-    abstract add (data?: IMessageData): DBAsyncReturn<IAddReturn>;
-    abstract close(): DBAsyncReturn<boolean>;
-    abstract destory(): DBAsyncReturn<boolean>;
-    abstract get(logid: string): DBAsyncReturn<ILogDBData | null>;
-    abstract download(filter?: TFilterOption | string): DBAsyncReturn<IDownloadInfo>;
-    abstract filter(filter?: TFilterOption | string): DBAsyncReturn<ILogDBData[]>;
-    abstract getAll(): DBAsyncReturn<ILogDBData[]>;
-    abstract count(): DBAsyncReturn<number>;
-    abstract clear(): DBAsyncReturn<boolean>;
-    abstract delete(logid: string): DBAsyncReturn<boolean>;
-    abstract injectBaseInfo(data: IBaseInfoOption): DBAsyncReturn<void>;
-    abstract refreshTraceId(): DBAsyncReturn<void>;
-    abstract refreshDurationStart(): DBAsyncReturn<void>;
+    constructor (data: IBaseInfoParam) {this.type = 'idb';}
+    abstract add (data?: IMessageData): Promise<IAddReturn>;
+    abstract close(): Promise<boolean>;
+    abstract destory(): Promise<boolean>;
+    abstract get(logid: string): Promise<ILogDBData | null>;
+    abstract download(filter?: TFilterOption | string): Promise<IDownloadInfo>;
+    abstract filter(filter?: TFilterOption | string): Promise<ILogDBData[]>;
+    abstract getAll(): Promise<ILogDBData[]>;
+    abstract count(): Promise<number>;
+    abstract clear(): Promise<boolean>;
+    abstract delete(logid: string): Promise<boolean>;
+    abstract injectBaseInfo(data: IBaseInfoOption): Promise<void>;
+    abstract refreshTraceId(): Promise<void>;
+    abstract refreshDurationStart(): Promise<void>;
 }
 
 export abstract class DBBase extends DBBaseMethods {
@@ -51,8 +47,6 @@ export abstract class DBBase extends DBBaseMethods {
     baseInfo: BaseInfo;
 
     useConsole: boolean;
-
-    storeType: TLogStoreType = 'idb';
 
     get name () {
         return this.baseInfo.name;
@@ -64,11 +58,14 @@ export abstract class DBBase extends DBBaseMethods {
     }
     injectBaseInfo (data: IBaseInfoOption) {
         this.baseInfo.injectBaseInfo(data);
+        return Promise.resolve();
     }
     refreshTraceId () {
         this.baseInfo.refreshTraceId();
+        return Promise.resolve();
     }
     refreshDurationStart () {
         this.baseInfo.refreshDurationStart();
+        return Promise.resolve();
     }
 }

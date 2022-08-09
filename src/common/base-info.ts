@@ -14,6 +14,7 @@ export class BaseInfo {
     durationStart: number;
 
     data: IBaseInfo = {
+        clientid: '',
         uid: '',
         traceid: '',
         network: '',

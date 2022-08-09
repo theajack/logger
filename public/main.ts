@@ -34,7 +34,7 @@ win.lg = new Logger({
     maxRecords: 10,
 });
 
-win.lg2 = new Logger<'sync'>({
+win.lg2 = new Logger({
     id: 'main',
     storeType: 'temp',
     onReport (d) {

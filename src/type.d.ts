@@ -12,6 +12,7 @@ export type TLogType = 'error' | 'log' | 'warn' | 'info';
 // 日志存储的数据
 export interface ILogDBData extends ILogData {
     uid: string;
+    clientid: string;
     traceid: string;
     network: string;
     url: string;
@@ -34,12 +35,14 @@ export type ILogData = Pick<
 
 export type ILoggerConfig = Pick<
     ILogDBData,
-    'uid' | 'traceid' | 'network'
+    'uid' | 'traceid' | 'network' | 'clientid'
 >
 
 export type ILoggerConfigOption = Partial<ILoggerConfig>
 
-export interface IBaseInfo extends ILoggerConfig, Pick<ILogDBData, 'url' | 'ua'> {}
+export interface IBaseInfo extends ILoggerConfig, Pick<
+    ILogDBData, 'url' | 'ua'
+> {}
 
 export type IBaseInfoOption = Partial<IBaseInfo>
 

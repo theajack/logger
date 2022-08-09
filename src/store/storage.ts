@@ -5,7 +5,7 @@
  * @Description: Coding something
  */
 import {BaseInfo} from '../common/base-info';
-import {DBBase, IAddReturn, IDownloadInfo, TFilterOption} from '../common/db-base';
+import {DBBase, TFilterOption} from '../common/db-base';
 import {dataToLogString} from '../common/utils';
 import {TLog} from '../common/t-log';
 import {checkValue} from '../filter-json/filter';
@@ -18,13 +18,13 @@ export class StorageStore extends DBBase {
     data: ILogDBData[] = []
 
     get useStorage (): boolean {
-        return this.storeType === 'storage';
+        return this.type === 'storage';
     }
     get useTemp (): boolean {
-        return this.storeType === 'temp';
+        return this.type === 'temp';
     }
     get noStore (): boolean {
-        return this.storeType === 'none';
+        return this.type === 'none';
     }
     
     constructor (data: IBaseInfoParam & {storeType: TLogStoreType}) {
@@ -40,7 +40,7 @@ export class StorageStore extends DBBase {
         if (!window.localStorage && storeType === 'storage') {
             storeType = 'temp';
         }
-        this.storeType = storeType;
+        this.type = storeType;
     }
 
     private _getAll () {
@@ -61,7 +61,7 @@ export class StorageStore extends DBBase {
         }
     }
 
-    add (data: IMessageData): IAddReturn {
+    add (data: IMessageData) {
         const dbData = this.baseInfo.appendBaseInfo(data);
         let discard: ILogDBData | null = null;
         if (this.useTemp || this.useStorage) {
@@ -78,42 +78,41 @@ export class StorageStore extends DBBase {
             this.data.push(dbData);
             this._saveAll();
         }
-        return {
+        return Promise.resolve({
             discard,
             add: dbData
-        };
+        });
     }
     close () {
-        return true;
+        return Promise.resolve(true);
     }
     destory () {
         this.data = [];
         localStorage.removeItem(this.key);
-        return true;
+        return Promise.resolve(true);
     }
-    get (logid: string): ILogDBData | null {
-        if (this.noStore) return null;
-        return this.data.find(d => d.logid === logid) || null;
+    get (logid: string) : Promise<ILogDBData|null> {
+        return Promise.resolve(this.data.find(d => d.logid === logid) || null);
     }
 
-    clear (): boolean {
+    clear () {
         this.data = [];
         this._saveAll();
-        return true;
+        return Promise.resolve(true);
     }
     delete (logid: string) {
         const index = this.data.findIndex(item => item.logid === logid);
 
-        if (index === -1) return false;
+        if (index === -1) return Promise.resolve(false);
         this.data.splice(index, 1);
         this._saveAll();
-        return true;
+        return Promise.resolve(true);
     }
-    count (): number {
-        return this.data.length;
+    count () {
+        return Promise.resolve(this.data.length);
     }
 
-    download (filter?: TFilterOption | string): IDownloadInfo {
+    download (filter?: TFilterOption | string) {
         let content = '';
         let count = 0;
         for (let i = 0; i < this.data.length; i++) {
@@ -123,17 +122,17 @@ export class StorageStore extends DBBase {
                 content += (dataToLogString(item) + '\n');
             }
         }
-        return {content, count};
+        return Promise.resolve({content, count});
     }
-    filter (filter?: TFilterOption | string): ILogDBData[] {
-        if (this.noStore) return [];
+    filter (filter?: TFilterOption | string): Promise<ILogDBData[]> {
+        if (this.noStore) return Promise.resolve([]);
 
-        return this.data.filter(d => {
+        return Promise.resolve(this.data.filter(d => {
             return checkValue(d, filter);
-        });
+        }));
     }
-    getAll (): ILogDBData[] {
-        if (this.noStore) return [];
-        return this.data;
+    getAll (): Promise<ILogDBData[]> {
+        if (this.noStore) return Promise.resolve([]);
+        return Promise.resolve(this.data);
     }
 }

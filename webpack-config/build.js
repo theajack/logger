@@ -11,7 +11,7 @@ module.exports = () => {
         mode: 'production',
         entry: path.resolve('./', 'src/index.ts'),
         output: {
-            path: path.resolve('./', 'dist'),
+            path: path.resolve('./', 'npm'),
             filename: 'ts-logger.min.js',
             library: 'TLogger',
             libraryTarget: 'umd',
