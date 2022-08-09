@@ -5,7 +5,7 @@
  */
 
 import {IJson, ILogDBData, IMessageData, TWorkerType} from '../type';
-import {DBBase, IAddReturn, TFilterOption} from '../common/db-base';
+import {DBBase, IAddReturn, IDownloadInfo, TFilterOption} from '../common/db-base';
 import {checkValue} from '../filter-json/filter';
 import {dataToLogString} from '../common/utils';
 import {FuncFilter} from '../filter-json/func-filter';
@@ -122,12 +122,22 @@ export class WorkerDB extends DBBase {
         this.db.close();
         this.db = undefined as any;
         delete dbMap[this.name];
+        return true;
     }
 
     destory () {
-        this.close();
-        TLog.info('数据库已销毁');
-        globalThis.indexedDB.deleteDatabase(this.baseInfo.name);
+        return new Promise<boolean>((resolve) => {
+            this.close();
+            const request = globalThis.indexedDB.deleteDatabase(this.baseInfo.name);
+            request.onsuccess = () => {
+                TLog.info('数据库已销毁');
+                resolve(true);
+            };
+            request.onerror = (event) => {
+                TLog.warn('数据库销毁失败:', event);
+                resolve(false);
+            };
+        });
     }
     
     get (logid: string) {
@@ -161,16 +171,18 @@ export class WorkerDB extends DBBase {
 
     download (filter?: TFilterOption | string) {
         filter = FuncFilter.transBack(filter);
-        return new Promise<string>((resolve) => {
-            let result = '';
+        return new Promise<IDownloadInfo>((resolve) => {
+            let content = '';
+            let count = 0;
             this._cursorBase({
                 onvalue (value) {
                     if (checkValue(value, filter)) {
-                        result += `${dataToLogString(value)}\\n`;
+                        count ++;
+                        content += `${dataToLogString(value)}\\n`;
                     }
                 },
-                onend () {resolve(result);},
-                onerror () {resolve('');}
+                onend () {resolve({content, count});},
+                onerror () {resolve({content, count});}
             });
         });
     }
@@ -231,8 +243,7 @@ export class WorkerDB extends DBBase {
             }
             const objectStore = this._getStore('readwrite');
             const request = objectStore.delete(key);
-            request.onsuccess = function (event) {
-                console.log(logid, event);
+            request.onsuccess = function () {
                 resolve(true);
             };
             request.onerror = function (event) {

@@ -4,31 +4,59 @@
  * @Description: Coding something
  */
 import {Logger} from '../src/index';
-import {StorageStore} from '../src/store/storage';
 
 const win = (window as any);
 
-const lg = new Logger<StorageStore>({
+// const lg = new Logger({
+//     id: 'main',
+//     storeType: 'idb',
+//     onReport (d) {
+//         console.warn('onReport', d);
+//     },
+//     maxRecords: 10,
+// });
+
+// const lg2 = new Logger<'sync'>({
+//     id: 'main',
+//     storeType: 'storage',
+//     onReport (d) {
+//         console.warn('onReport', d);
+//     },
+//     maxRecords: 10,
+// });
+
+win.lg = new Logger({
     id: 'main',
-    storeType: 'storage',
+    storeType: 'idb',
     onReport (d) {
         console.warn('onReport', d);
     },
     maxRecords: 10,
 });
 
-const res = lg.store.add({} as any);
-console.log(res);
+win.lg2 = new Logger<'sync'>({
+    id: 'main',
+    storeType: 'temp',
+    onReport (d) {
+        console.warn('onReport', d);
+    },
+    maxRecords: 10,
+});
 
-const data = lg.log('111');
+// const num = lg2.count();
 
-const d1 = lg._logCommon(['11'], 'log');
+// lg.info('121')?.add;
 
-const d2 = lg.count();
-const d3 = lg.store.count();
+// const d1 = lg.log('111');
+// const d2 = lg.count();
+// const d3 = lg.download();
+
+// await lg.refreshTraceId();
+
 
 win.Logger = Logger;
-win.lg = lg;
+// win.lg = lg;
+// win.lg2 = lg2;
 
 // lg.injectBaseInfo({a: 11});
 

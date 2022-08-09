@@ -3,7 +3,7 @@
  * @Date: 2022-07-30 13:28:38
  * @Description: Coding something
  */
-import {DBBaseMethods, IAddReturn, TFilterOption} from '../common/db-base';
+import {DBBaseMethods, IAddReturn, IDownloadInfo, TFilterOption} from '../common/db-base';
 import {codeToBlob, transformDOM} from '../common/utils';
 import {IBaseInfoOption, IBaseInfoParam, IJson, ILogDBData, IMessageData, IWorkerBackMessage, TWorkerType} from '../type';
 import WorkerCode from '../worker/dist/worker.min';
@@ -108,7 +108,7 @@ export class WorkerStore extends DBBaseMethods {
         return (await this._postMessage('getAll')).result;
     }
 
-    async download (filter?: TFilterOption): Promise<string> {
+    async download (filter?: TFilterOption): Promise<IDownloadInfo> {
         return (await this._postMessage('download', FuncFilter.transFunc(filter))).result;
     }
 

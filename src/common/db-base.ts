@@ -11,31 +11,37 @@ export type TFilterOption =
     IJson |
     IJson[];
 
+export interface IDownloadInfo {
+    content: string;
+    count: number;
+}
+
+export type TSyncType = 'async' | 'sync';
+
 type DBAsyncReturn<T = any> = Promise<T> | T;
-type DBsyncReturn<T = any> = T;
 
 export type IAddReturn = {
     discard: ILogDBData | null;
     add: ILogDBData;
 } | null
 
-export abstract class DBBaseMethods <T extends DBAsyncReturn = any> {
+export abstract class DBBaseMethods {
     type: TLogStoreType;
     onReport?: (data: ILogDBData) => void;
     onDiscard?: (data: ILogDBData) => void;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor (data: IBaseInfoParam) {}
     abstract add (data?: IMessageData): DBAsyncReturn<IAddReturn>;
-    abstract close(): T extends DBsyncReturn ? DBsyncReturn<void>: DBAsyncReturn<void>;
-    abstract destory(): DBAsyncReturn<void>;
-    abstract injectBaseInfo(data: IBaseInfoOption): void;
+    abstract close(): DBAsyncReturn<boolean>;
+    abstract destory(): DBAsyncReturn<boolean>;
     abstract get(logid: string): DBAsyncReturn<ILogDBData | null>;
-    abstract download(filter?: TFilterOption | string): DBAsyncReturn<string>;
+    abstract download(filter?: TFilterOption | string): DBAsyncReturn<IDownloadInfo>;
     abstract filter(filter?: TFilterOption | string): DBAsyncReturn<ILogDBData[]>;
     abstract getAll(): DBAsyncReturn<ILogDBData[]>;
     abstract count(): DBAsyncReturn<number>;
     abstract clear(): DBAsyncReturn<boolean>;
     abstract delete(logid: string): DBAsyncReturn<boolean>;
+    abstract injectBaseInfo(data: IBaseInfoOption): DBAsyncReturn<void>;
     abstract refreshTraceId(): DBAsyncReturn<void>;
     abstract refreshDurationStart(): DBAsyncReturn<void>;
 }
@@ -65,20 +71,4 @@ export abstract class DBBase extends DBBaseMethods {
     refreshDurationStart () {
         this.baseInfo.refreshDurationStart();
     }
-}
-
-export abstract class SyncDBBase extends DBBase {
-    abstract add (data?: IMessageData): DBAsyncReturn<IAddReturn>
-    abstract close(): DBAsyncReturn<void>;
-    abstract destory(): DBAsyncReturn<void>;
-    abstract injectBaseInfo(data: IBaseInfoOption): void;
-    abstract get(logid: string): DBAsyncReturn<ILogDBData | null>;
-    abstract download(filter?: TFilterOption | string): DBAsyncReturn<string>;
-    abstract filter(filter?: TFilterOption | string): DBAsyncReturn<ILogDBData[]>;
-    abstract getAll(): DBAsyncReturn<ILogDBData[]>;
-    abstract count(): DBAsyncReturn<number>;
-    abstract clear(): DBAsyncReturn<boolean>;
-    abstract delete(logid: string): DBAsyncReturn<boolean>;
-    abstract refreshTraceId(): void;
-    abstract refreshDurationStart(): void;
 }

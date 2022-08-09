@@ -5,7 +5,7 @@
  * @Description: Coding something
  */
 import {BaseInfo} from '../common/base-info';
-import {DBBase, IAddReturn, TFilterOption} from '../common/db-base';
+import {DBBase, IAddReturn, IDownloadInfo, TFilterOption} from '../common/db-base';
 import {dataToLogString} from '../common/utils';
 import {TLog} from '../common/t-log';
 import {checkValue} from '../filter-json/filter';
@@ -66,7 +66,7 @@ export class StorageStore extends DBBase {
         let discard: ILogDBData | null = null;
         if (this.useTemp || this.useStorage) {
             const max = this.baseInfo.config.maxRecords;
-            if (this.data.length > max) {
+            if (this.data.length >= max) {
                 const item = this.data.shift();
                 if (item) {
                     discard = item;
@@ -83,13 +83,13 @@ export class StorageStore extends DBBase {
             add: dbData
         };
     }
-
     close () {
         return true;
     }
     destory () {
         this.data = [];
         localStorage.removeItem(this.key);
+        return true;
     }
     get (logid: string): ILogDBData | null {
         if (this.noStore) return null;
@@ -113,17 +113,17 @@ export class StorageStore extends DBBase {
         return this.data.length;
     }
 
-    download (filter?: TFilterOption | string): string {
-        if (this.noStore) return '';
-        let result = '';
-        
+    download (filter?: TFilterOption | string): IDownloadInfo {
+        let content = '';
+        let count = 0;
         for (let i = 0; i < this.data.length; i++) {
             const item = this.data[i];
             if (checkValue(item, filter)) {
-                result += `${dataToLogString(item)}\\n`;
+                count ++;
+                content += (dataToLogString(item) + '\n');
             }
         }
-        return result;
+        return {content, count};
     }
     filter (filter?: TFilterOption | string): ILogDBData[] {
         if (this.noStore) return [];

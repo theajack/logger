@@ -5,27 +5,26 @@
  */
 import {
     IJson, IBaseInfoOption, IMessageData, TLogType,
-    IBaseInfoParam, IStoreConfig, TLogStoreType
+    IBaseInfoParam, IStoreConfig, ILogDBData
 } from './type';
 import {dateToStr, download, uuid} from './common/utils';
 import {
     ILoggerOption,
 } from './type';
-import {DBBaseMethods, TFilterOption} from './common/db-base';
+import {DBBaseMethods, IAddReturn, TFilterOption, TSyncType} from './common/db-base';
 import {WorkerStore} from './store/worker-store';
 import {StorageStore} from './store/storage';
 
-type IITest = {
-    [prop in TLogStoreType]: DBBaseMethods;
-}
-export interface ITest extends IITest {
-    idb: DBBaseMethods;
-    storage: StorageStore;
+interface ISyncStore {
+    async: DBBaseMethods;
+    sync: StorageStore;
 }
 
-export class Logger<T extends DBBaseMethods = DBBaseMethods> {
+type TLoggerReturn<T, K> = (T extends 'async' ? Promise<K> : K)
 
-    store: T;
+export class Logger<T extends TSyncType = 'async'> {
+
+    private _store: ISyncStore[T];
     id: string;
 
     constructor ({
@@ -39,14 +38,14 @@ export class Logger<T extends DBBaseMethods = DBBaseMethods> {
     }: ILoggerOption = {}) {
         if (!id) throw new Error('Logger id is required');
         
-        this.store = LoggerHelper.initStore({
+        this._store = this._initStore({
             id,
             storeType,
             maxRecords,
             useConsole,
             onReport,
             onDiscard,
-        }) as T;
+        });
 
         this.id = id;
         this.injectBaseInfo(baseInfo);
@@ -56,7 +55,7 @@ export class Logger<T extends DBBaseMethods = DBBaseMethods> {
         baseInfo.uid = LoggerHelper.initUid(baseInfo?.uid);
         baseInfo.url = baseInfo.url || window.location.href;
         baseInfo.ua = baseInfo.ua || window.navigator.userAgent;
-        this.store.injectBaseInfo(baseInfo);
+        return this._store.injectBaseInfo(baseInfo) as TLoggerReturn<T, void>;
     }
 
     log (...args: any[]) {
@@ -71,59 +70,65 @@ export class Logger<T extends DBBaseMethods = DBBaseMethods> {
     info (...args: any[]) {
         return this._logCommon(args, 'info');
     }
-    _logCommon (args: any[], type: TLogType) {
+    private _logCommon (args: any[], type: TLogType) {
         const data = LoggerHelper.buildLogData(args, type);
-        return this.store.add(data);
+        return this._store.add(data) as TLoggerReturn<T, IAddReturn>;
     }
     close () {
-        return this.store.close();
+        return this._store.close() as TLoggerReturn<T, boolean>;
     }
     destory () {
-        return this.store.destory();
+        return this._store.destory() as TLoggerReturn<T, boolean>;
     }
     clear () {
-        return this.store.clear();
+        return this._store.clear() as TLoggerReturn<T, boolean>;
     }
     count () {
-        return this.store.count();
+        return this._store.count() as TLoggerReturn<T, number>;
     }
     delete (logid: string) {
-        return this.store.delete(logid);
+        return this._store.delete(logid) as TLoggerReturn<T, boolean>;
     }
 
     refreshTraceId () {
-        this.store.refreshTraceId();
+        return this._store.refreshTraceId() as TLoggerReturn<T, void>;
     }
 
     refreshDurationStart () {
-        this.store.refreshDurationStart();
+        return this._store.refreshDurationStart() as TLoggerReturn<T, void>;
     }
 
     // 下载日志
-    async download ({
+    download ({
         name, filter
     }:{
         name?: string;
         filter?: TFilterOption
-    } = {}) {
+    } = {}): TLoggerReturn<T, number> {
 
         if (!name) name = dateToStr(new Date(), '_');
         
-        const data = await this.store.download(filter);
+        const data = this._store.download(filter);
 
-        download({
-            name: `${name}.log`,
-            content: data
-        });
-        return data.length;
+        if (data instanceof Promise) {
+            return new Promise(resolve => {
+                data.then(({content, count}) => {
+                    download({name: `${name}.log`, content});
+                    resolve(count);
+                });
+            }) as TLoggerReturn<T, number>;
+        } else {
+            download({name: `${name}.log`, content: data.content});
+            return data.count as TLoggerReturn<T, number>;
+        }
     }
 
     get (logid: string) {
-        return this.store.get(logid);
+        return this._store.get(logid) as TLoggerReturn<T, ILogDBData | null>;
     }
 
     getAll () {
-        return this.store.getAll();
+        return this._store.getAll() as TLoggerReturn<T, ILogDBData[]>;
     }
 
 
@@ -131,7 +136,27 @@ export class Logger<T extends DBBaseMethods = DBBaseMethods> {
         if (!filter) {
             return this.getAll();
         }
-        return this.store.filter(filter);
+        return this._store.filter(filter) as TLoggerReturn<T, ILogDBData[]>;
+    }
+    private _initStore ({
+        id,
+        storeType,
+        maxRecords,
+        useConsole,
+        onReport,
+        onDiscard,
+    }: IStoreConfig): ISyncStore[T] {
+        const canUseIndexedDB = !!window.Worker && !!window.indexedDB;
+        const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport, onDiscard};
+        
+        if (storeType === 'idb' && canUseIndexedDB) {
+            return new WorkerStore(options) as any;
+        } else {
+            return new StorageStore({
+                ...options,
+                storeType
+            });
+        }
     }
 }
 
@@ -164,26 +189,6 @@ const LoggerHelper = {
                 window.localStorage.setItem(KEY, uid);
             }
             return uid;
-        }
-    },
-    initStore ({
-        id,
-        storeType,
-        maxRecords,
-        useConsole,
-        onReport,
-        onDiscard,
-    }: IStoreConfig): DBBaseMethods {
-        const canUseIndexedDB = !!window.Worker && !!window.indexedDB;
-        const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport, onDiscard};
-        
-        if (storeType === 'idb' && canUseIndexedDB) {
-            return new WorkerStore(options);
-        } else {
-            return new StorageStore({
-                ...options,
-                storeType
-            });
         }
     }
 };
