@@ -7,25 +7,25 @@ const path = require('path');
 const configBase = require('./config.base');
 
 module.exports = {
-    mode: 'development',
-    entry: path.resolve('./', 'public/main.ts'),
-    output: {
-        path: path.resolve('./', 'public'),
-        filename: 'bundle.js'
+  mode: 'development',
+  entry: path.resolve('./', 'public/main.ts'),
+  output: {
+    path: path.resolve('./', 'public'),
+    filename: 'bundle.js'
+  },
+  resolve: configBase.resolve,
+  devtool: 'eval-source-map',
+  devServer: {
+    port: 8083,
+    contentBase: path.resolve('./', 'public'),
+    historyApiFallback: true,
+    inline: true,
+    host: 'localhost',
+    disableHostCheck: true,
+    proxy: {
     },
-    resolve: configBase.resolve,
-    devtool: 'eval-source-map',
-    devServer: {
-        port: 8083,
-        contentBase: path.resolve('./', 'public'),
-        historyApiFallback: true,
-        inline: true,
-        host: 'localhost',
-        disableHostCheck: true,
-        proxy: {
-        },
-    },
-    module: {
-        rules: configBase.rules
-    }
+  },
+  module: {
+    rules: configBase.rules
+  }
 };

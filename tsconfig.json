@@ -3,10 +3,10 @@
         "baseUrl": ".",
         "outDir": "dist",
         "sourceMap": false,
-        "target": "es5",
+        "target": "es2016",
         "module": "esnext",
         "moduleResolution": "node",
-        "allowJs": false,
+        "allowJs": true,
         "noUnusedLocals": true,
         "strictNullChecks": true,
         "noImplicitAny": true,
@@ -17,15 +17,17 @@
         "removeComments": false,
         "jsx": "preserve",
         "lib": ["esnext", "dom"],
-        // "types": ["jest", "puppeteer", "node"],
+        "types": ["node"],
         "rootDir": ".",
-        // "paths": {
-        //   "@vue/*": ["packages/*/src"]
-        // }
+        "noEmit": false,
+        "paths": {}
     },
     "include": [
-        "./src/*"
-, "src/common/utils.ts", "src/common/base-info.ts"    ],
+        ".eslintrc.js",
+        "babel.config.js",
+        "scripts/**/*",
+        "src/**/*"
+    ],
     "exclude": [
         "./node_modules"
     ]

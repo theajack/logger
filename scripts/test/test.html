@@ -1,0 +1,38 @@
+<!--
+ * @Author: tackchen
+ * @Date: 2022-08-07 15:27:07
+ * @Description: Coding something
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <!-- http://localhost:3000/scripts/test/test -->
+  <script src="../../npm/idb-logger.min.js"></script>
+  <script>
+
+    window.lg = new IDBLogger({
+      id: 'main',
+      storeType: 'idb',
+      onReport (d) {
+        console.warn('onReport', d);
+      },
+      maxRecords: 10,
+    });
+
+    window.lg2 = new IDBLogger({
+      id: 'main',
+      storeType: 'storage',
+      onReport (d) {
+        console.warn('onReport', d);
+      },
+      maxRecords: 10,
+    });
+  </script>
+</body>
+</html>

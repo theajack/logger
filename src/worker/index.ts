@@ -7,17 +7,23 @@
 import {IWorkerBackMessage, IWorkerMessage} from '../type';
 import {WorkerDB} from './store';
 
-globalThis.addEventListener('message', async function (
+function main () {
+  globalThis.addEventListener('message', async function (
     this: Window,
     e: {data: IWorkerMessage}
-) {
+  ) {
     const {msgid, type, data, id} = e.data;
-
+    
     const db = new WorkerDB(id);
     let result = db.msgMap[type](data);
     if (result instanceof Promise) {
-        result = await result;
+      result = await result;
     }
     // TLog.log(globalThis, globalThis.localStorage);
     (globalThis.postMessage as any)({msgid, id, type, result} as IWorkerBackMessage);
-}, false);
+  }, false);
+}
+
+main();
+
+export default '1';

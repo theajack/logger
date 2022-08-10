@@ -1,64 +1,55 @@
 {
-    "name": "ts-demo",
+    "name": "idb-logger",
     "version": "0.0.1",
-    "description": "idcard",
+    "description": "Makes creating WebWorkers easier",
+    "repository": "git@github.com:theajack/logger.git",
+    "author": "tackchen <theajack@qq.com>",
+    "main": "idb-logger.min.js",
+    "unpkg": "idb-logger.min.js",
+    "jsdelivr": "idb-logger.min.js",
+    "typings": "idb-logger.min.d.ts",
     "scripts": {
-        "dev:wk": "webpack --config webpack-config/dev-worker.js",
-        "dev:main": "webpack-dev-server --open --config webpack-config/dev.js",
-        "dev": "run-p dev:main dev:wk",
-        "build": "npm run build:wk && npm run build:main",
-        "build:main": "webpack --config webpack-config/build.js",
-        "build:wk": "webpack --config webpack-config/build-worker.js",
-        "lint": "eslint src --ext js",
-        "eb:build": "node ./scripts/ebuild/build.js",
-        "eb:docs": "node ./scripts/ebuild/build-docs.js",
-        "eb:release": "node ./scripts/ebuild/push-release.js",
-        "eb:publish": "node ./scripts/ebuild/publish.js",
-        "eb:purge": "node ./scripts/ebuild/purge-cdn.js",
-        "eb:mono-init-pkg": "node ./scripts/ebuild/init-packages-info.js",
-        "eb:mono-init-pkg-dev": "node ./scripts/ebuild/init-packages-info.js dev",
-        "eb:mono-dep": "node ./scripts/ebuild/init-learn-dep.js"
+        "lint": "eslint src --ext ts",
+        "_dev": "node scripts/dev.js",
+        "_serve": "serve scripts/dev",
+        "dev": "run-p _dev _serve",
+        "build": "node scripts/build/build.js"
     },
-    "author": "theajack",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/theajack/ebuild-cli"
-    },
-    "keywords": [
-        "ebuild-cli"
-    ],
+    "keywords": [],
     "license": "MIT",
-    "devDependencies": {
-        "@babel/core": "^7.6.4",
-        "@babel/plugin-proposal-object-rest-spread": "^7.6.2",
-        "@babel/plugin-syntax-dynamic-import": "^7.2.0",
-        "@babel/preset-env": "^7.6.3",
-        "@commitlint/cli": "^8.2.0",
-        "@commitlint/config-conventional": "^8.2.0",
-        "@typescript-eslint/eslint-plugin": "^2.14.0",
-        "@typescript-eslint/parser": "^2.14.0",
-        "babel-eslint": "^10.0.3",
-        "babel-loader": "^8.0.6",
-        "babel-plugin-transform-object-rest-spread": "^6.26.0",
-        "eslint": "^6.8.0",
-        "eslint-config-standard": "^14.1.0",
-        "eslint-loader": "^3.0.2",
-        "eslint-plugin-import": "^2.18.2",
-        "eslint-plugin-node": "^10.0.0",
-        "eslint-plugin-promise": "^4.2.1",
-        "husky": "^3.0.9",
-        "lint-staged": "^9.4.2",
-        "npm-run-all": "^4.1.5",
-        "ts-loader": "^6.2.1",
-        "typescript": "^3.7.4",
-        "webpack": "^4.41.2",
-        "webpack-cli": "^3.3.9",
-        "webpack-dev-server": "^3.8.2",
-        "run-node-webpack-plugin": "^1.3.0"
+    "bugs": {
+        "url": "https://github.com/theajack/logger/issues"
     },
-    "husky": {
-        "hooks": {
-            "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-        }
+    "homepage": "https://shiyix.cn/jsbox/?github=theajack.logger",
+    "devDependencies": {
+        "@babel/core": "^7.18.5",
+        "@babel/preset-env": "^7.18.2",
+        "@babel/preset-typescript": "^7.17.12",
+        "@rollup/plugin-babel": "^5.3.1",
+        "@rollup/plugin-commonjs": "^22.0.1",
+        "@rollup/plugin-node-resolve": "^13.3.0",
+        "@rollup/plugin-replace": "^4.0.0",
+        "@rollup/plugin-yaml": "^3.1.0",
+        "@types/node": "^18.0.1",
+        "@typescript-eslint/eslint-plugin": "^5.29.0",
+        "@typescript-eslint/parser": "^5.29.0",
+        "esbuild": "^0.14.47",
+        "esbuild-plugin-babel": "^0.2.3",
+        "esbuild-plugin-d.ts": "^1.1.0",
+        "esbuild-plugin-yaml": "^0.0.1",
+        "eslint": "^8.18.0",
+        "execa": "4.0.2",
+        "lerna": "^5.1.5",
+        "npm-run-all": "^4.1.5",
+        "rollup": "^2.75.7",
+        "rollup-plugin-dts": "^4.2.2",
+        "rollup-plugin-typescript2": "^0.32.1",
+        "rollup-plugin-uglify": "^6.0.4",
+        "serve": "^13.0.2",
+        "tslib": "^2.4.0",
+        "typescript": "^4.7.4"
+    },
+    "publishConfig": {
+        "registry": "https://registry.npmjs.org"
     }
 }

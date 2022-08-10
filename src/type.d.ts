@@ -10,7 +10,7 @@ export interface IJson<T=any> {
 export type TLogType = 'error' | 'log' | 'warn' | 'info';
 
 // 日志存储的数据
-export interface ILogDBData extends ILogData {
+export interface ILogDBData {
     uid: string;
     clientid: string;
     traceid: string;
@@ -49,7 +49,7 @@ export type IBaseInfoOption = Partial<IBaseInfo>
 export type IMessageData = Pick<
     ILogDBData,
     'msg' | 'payload' | 'type'
->
+> & {extend?: IJson}
 
 export type ILogString = string;
 

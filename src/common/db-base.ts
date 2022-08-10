@@ -10,7 +10,7 @@ export type TFilterOption =
     (data: ILogDBData) => boolean |
     IJson |
     IJson[];
-
+ 
 export interface IDownloadInfo {
     content: string;
     count: number;
@@ -22,11 +22,11 @@ export type IAddReturn = {
 } | null
 
 export abstract class DBBaseMethods {
-    type: TLogStoreType;
-    onReport?: (data: ILogDBData) => void;
-    onDiscard?: (data: ILogDBData) => void;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    constructor (data: IBaseInfoParam) {this.type = 'idb';}
+  type: TLogStoreType;
+  onReport?: (data: ILogDBData) => void;
+  onDiscard?: (data: ILogDBData) => void;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor (data: IBaseInfoParam) {this.type = 'idb';}
     abstract add (data?: IMessageData): Promise<IAddReturn>;
     abstract close(): Promise<boolean>;
     abstract destory(): Promise<boolean>;
@@ -44,28 +44,28 @@ export abstract class DBBaseMethods {
 
 export abstract class DBBase extends DBBaseMethods {
 
-    baseInfo: BaseInfo;
+  baseInfo: BaseInfo;
 
-    useConsole: boolean;
+  useConsole: boolean;
 
-    get name () {
-        return this.baseInfo.name;
-    }
+  get name () {
+    return this.baseInfo.name;
+  }
 
-    constructor (data: IBaseInfoParam) {
-        super(data);
-        this.baseInfo = new BaseInfo(data);
-    }
-    injectBaseInfo (data: IBaseInfoOption) {
-        this.baseInfo.injectBaseInfo(data);
-        return Promise.resolve();
-    }
-    refreshTraceId () {
-        this.baseInfo.refreshTraceId();
-        return Promise.resolve();
-    }
-    refreshDurationStart () {
-        this.baseInfo.refreshDurationStart();
-        return Promise.resolve();
-    }
+  constructor (data: IBaseInfoParam) {
+    super(data);
+    this.baseInfo = new BaseInfo(data);
+  }
+  injectBaseInfo (data: IBaseInfoOption) {
+    this.baseInfo.injectBaseInfo(data);
+    return Promise.resolve();
+  }
+  refreshTraceId () {
+    this.baseInfo.refreshTraceId();
+    return Promise.resolve();
+  }
+  refreshDurationStart () {
+    this.baseInfo.refreshDurationStart();
+    return Promise.resolve();
+  }
 }
