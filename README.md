@@ -39,7 +39,7 @@
 
 <h3>🚀 A high-performance, high-capacity, and highly scalable web-side logging system based on WebWorker and indexedDB</h3>
 
-**[Online use](https://shiyix.cn/jsbox?github=theajack.logger) | [English](https://github.com/theajack/logger) | [Changelog](https://github.com/theajack/logger/blob/master/scripts/version.md) | [issue feedback](https://github.com/theajack/logger/issues/new) | [Gitee](https://gitee.com/theajack/logger)**
+**[Online use](https://shiyix.cn/jsbox?github=theajack.logger) | [中文](https://github.com/theajack/logger/blob/master/README.cn.md) | [Changelog](https://github.com/theajack/logger/blob/master/scripts/version.md) | [issue feedback](https://github.com/theajack/logger/issues/new) | [Gitee](https://gitee.com/theajack/logger)**
 
 ## 0. Introduction
 
