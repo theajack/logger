@@ -43,7 +43,7 @@
 
 ## 0. Introduction
 
-idb-logger is committed to helping web developers easily and efficiently access high-performance logging systems. Relying on webworker and indexedDB technologies, web applications can store large-capacity logs in browsers in a way that hardly affects user experience, and Report to the server when appropriate or have users download it by themselves.
+idb-logger is committed to helping web developers access a high-performance logging system conveniently and efficiently. Relying on webworker and indexedDB technologies, web applications can store large-capacity logs in the browser in a way that hardly affects the user experience, and Report it to the server at the right time, or download it by the user.
 
 ### 0.1 Features
 
