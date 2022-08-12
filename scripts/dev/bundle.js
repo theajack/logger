@@ -83,10 +83,36 @@ function codeToBlob(code) {
   const objectURL = window.URL.createObjectURL(blob);
   return objectURL;
 }
-function dataToLogString(data) {
-  const payload = typeof data.payload !== "undefined" ? ` payload=${toLogString(data.payload)};` : "";
-  const network = data.network ? ` network=${data.network};` : "";
-  return `[${data.time}] type=${data.type}; msg=${data.msg};${payload} uid=${data.uid}; traceid=${data.traceid}; logid=${data.logid}; duration=${data.duration}; ${network} url=${data.url}; ua=${data.ua};`;
+var DefaultKeys = [
+  "type",
+  "msg",
+  "payload",
+  "uid",
+  "traceid",
+  "logid",
+  "duration",
+  "network",
+  "url",
+  "ua"
+];
+function dataToLogString(data, keys = []) {
+  let content = `[${data.time}]`;
+  const append = (key) => {
+    const v = data[key];
+    if (typeof v !== "undefined" && v !== "") {
+      content += ` ${key}=${toLogString(v)};`;
+    }
+  };
+  console.log(keys);
+  for (const key of keys) {
+    append(key);
+  }
+  for (const key of DefaultKeys) {
+    if (!keys.includes(key)) {
+      append(key);
+    }
+  }
+  return content;
 }
 function download({
   name,
@@ -321,6 +347,66 @@ var TLog = {
 };
 
 // src/common/utils.ts
+function _createForOfIteratorHelper(o, allowArrayLike) {
+  var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
+  if (!it) {
+    if (Array.isArray(o) || (it = _unsupportedIterableToArray2(o)) || allowArrayLike && o && typeof o.length === "number") {
+      if (it)
+        o = it;
+      var i = 0;
+      var F = function F2() {
+      };
+      return { s: F, n: function n() {
+        if (i >= o.length)
+          return { done: true };
+        return { done: false, value: o[i++] };
+      }, e: function e(_e) {
+        throw _e;
+      }, f: F };
+    }
+    throw new TypeError("Invalid attempt to iterate non-iterable instance.In order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+  var normalCompletion = true, didErr = false, err;
+  return { s: function s() {
+    it = it.call(o);
+  }, n: function n() {
+    var step = it.next();
+    normalCompletion = step.done;
+    return step;
+  }, e: function e(_e2) {
+    didErr = true;
+    err = _e2;
+  }, f: function f() {
+    try {
+      if (!normalCompletion && it.return != null)
+        it.return();
+    } finally {
+      if (didErr)
+        throw err;
+    }
+  } };
+}
+function _unsupportedIterableToArray2(o, minLen) {
+  if (!o)
+    return;
+  if (typeof o === "string")
+    return _arrayLikeToArray2(o, minLen);
+  var n = Object.prototype.toString.call(o).slice(8, -1);
+  if (n === "Object" && o.constructor)
+    n = o.constructor.name;
+  if (n === "Map" || n === "Set")
+    return Array.from(o);
+  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n))
+    return _arrayLikeToArray2(o, minLen);
+}
+function _arrayLikeToArray2(arr, len) {
+  if (len == null || len > arr.length)
+    len = arr.length;
+  for (var i = 0, arr2 = new Array(len); i < len; i++) {
+    arr2[i] = arr[i];
+  }
+  return arr2;
+}
 function _typeof(obj) {
   "@babel/helpers - typeof";
   return _typeof = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(obj2) {
@@ -361,10 +447,42 @@ function dateToStr(date) {
 function fn(num) {
   return num < 10 ? "0".concat(num) : num;
 }
+var DefaultKeys = ["type", "msg", "payload", "uid", "traceid", "logid", "duration", "network", "url", "ua"];
 function dataToLogString(data) {
-  var payload = typeof data.payload !== "undefined" ? " payload=".concat(toLogString(data.payload), ";") : "";
-  var network = data.network ? " network=".concat(data.network, ";") : "";
-  return "[".concat(data.time, "] type=").concat(data.type, "; msg=").concat(data.msg, ";").concat(payload, " uid=").concat(data.uid, "; traceid=").concat(data.traceid, "; logid=").concat(data.logid, "; duration=").concat(data.duration, "; ").concat(network, " url=").concat(data.url, "; ua=").concat(data.ua, ";");
+  var keys = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : [];
+  var content = "[".concat(data.time, "]");
+  var append = function append2(key2) {
+    var v = data[key2];
+    if (typeof v !== "undefined" && v !== "") {
+      content += " ".concat(key2, "=").concat(toLogString(v), ";");
+    }
+  };
+  console.log(keys);
+  var _iterator = _createForOfIteratorHelper(keys), _step;
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done; ) {
+      var key = _step.value;
+      append(key);
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+  var _iterator2 = _createForOfIteratorHelper(DefaultKeys), _step2;
+  try {
+    for (_iterator2.s(); !(_step2 = _iterator2.n()).done; ) {
+      var _key = _step2.value;
+      if (!keys.includes(_key)) {
+        append(_key);
+      }
+    }
+  } catch (err) {
+    _iterator2.e(err);
+  } finally {
+    _iterator2.f();
+  }
+  return content;
 }
 
 // src/common/base-info.ts
@@ -1111,8 +1229,8 @@ function createMessageMap(db) {
     filter: function filter(_filter) {
       return db.filter(_filter);
     },
-    download: function download(filter) {
-      return db.download(filter);
+    download: function download(data) {
+      return db.download(data);
     },
     count: function count() {
       return db.count();
@@ -1358,8 +1476,9 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
     }
   }, {
     key: "download",
-    value: function download(filter) {
+    value: function download(_ref5) {
       var _this8 = this;
+      var filter = _ref5.filter, _ref5$keys = _ref5.keys, keys = _ref5$keys === void 0 ? [] : _ref5$keys;
       filter = FuncFilter.transBack(filter);
       return new Promise(function(resolve) {
         var content = "";
@@ -1368,7 +1487,7 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
           onvalue: function onvalue(value) {
             if (checkValue(value, filter)) {
               count++;
-              content += "".concat(dataToLogString(value), "\\n");
+              content += "".concat(dataToLogString(value, keys), "\\n");
             }
           },
           onend: function onend() {
@@ -1429,7 +1548,7 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
     value: function _getKey(logid) {
       var _this11 = this;
       return new Promise(/* @__PURE__ */ function() {
-        var _ref5 = _asyncToGenerator(/* @__PURE__ */ _regeneratorRuntime().mark(function _callee5(resolve) {
+        var _ref6 = _asyncToGenerator(/* @__PURE__ */ _regeneratorRuntime().mark(function _callee5(resolve) {
           var objectStore, request;
           return _regeneratorRuntime().wrap(function _callee5$(_context5) {
             while (1) {
@@ -1453,7 +1572,7 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
           }, _callee5);
         }));
         return function(_x3) {
-          return _ref5.apply(this, arguments);
+          return _ref6.apply(this, arguments);
         };
       }());
     }
@@ -1462,7 +1581,7 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
     value: function _delete(logid) {
       var _this12 = this;
       return new Promise(/* @__PURE__ */ function() {
-        var _ref6 = _asyncToGenerator(/* @__PURE__ */ _regeneratorRuntime().mark(function _callee6(resolve) {
+        var _ref7 = _asyncToGenerator(/* @__PURE__ */ _regeneratorRuntime().mark(function _callee6(resolve) {
           var key, objectStore, request;
           return _regeneratorRuntime().wrap(function _callee6$(_context6) {
             while (1) {
@@ -1497,7 +1616,7 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
           }, _callee6);
         }));
         return function(_x4) {
-          return _ref6.apply(this, arguments);
+          return _ref7.apply(this, arguments);
         };
       }());
     }
@@ -1526,8 +1645,8 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
     }
   }, {
     key: "_cursorBase",
-    value: function _cursorBase(_ref7) {
-      var onend = _ref7.onend, onvalue = _ref7.onvalue, onerror = _ref7.onerror;
+    value: function _cursorBase(_ref8) {
+      var onend = _ref8.onend, onvalue = _ref8.onvalue, onerror = _ref8.onerror;
       var objectStore = this._getStore();
       var cursorObject = objectStore.openCursor();
       cursorObject.onsuccess = function(event) {
@@ -2056,9 +2175,12 @@ var WorkerStore = class extends DBBaseMethods {
       return (yield this._postMessage("getAll")).result;
     });
   }
-  download(filter) {
-    return __async(this, null, function* () {
-      return (yield this._postMessage("download", FuncFilter.transFunc(filter))).result;
+  download(_0) {
+    return __async(this, arguments, function* ({ filter, keys }) {
+      return (yield this._postMessage("download", {
+        filter: FuncFilter.transFunc(filter),
+        keys
+      })).result;
     });
   }
   filter(filter) {
@@ -2212,14 +2334,14 @@ var StorageStore = class extends DBBase {
   count() {
     return Promise.resolve(this.data.length);
   }
-  download(filter) {
+  download({ filter, keys }) {
     let content = "";
     let count = 0;
     for (let i = 0; i < this.data.length; i++) {
       const item = this.data[i];
       if (checkValue(item, filter)) {
         count++;
-        content += dataToLogString(item) + "\n";
+        content += dataToLogString(item, keys) + "\n";
       }
     }
     return Promise.resolve({ content, count });
@@ -2308,14 +2430,15 @@ var Logger = class {
   refreshDurationStart() {
     return this._store.refreshDurationStart();
   }
-  download() {
+  download(_0) {
     return __async(this, arguments, function* ({
       name,
-      filter
-    } = {}) {
+      filter,
+      keys
+    }) {
       if (!name)
         name = dateToStr(new Date(), "_");
-      const { content, count } = yield this._store.download(filter);
+      const { content, count } = yield this._store.download({ filter, keys });
       download({ name: `${name}.log`, content });
       return count;
     });

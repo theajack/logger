@@ -62,13 +62,13 @@ idb-logger is committed to helping web developers access a high-performance logg
 
 #### 1.0.1 npm install
 
-````
+```
 npm i idb-logger
-````
+```
 
-````js
+```js
 import Logger from 'idb-logger';
-````
+```
 
 #### 1.0.2 cdn
 
@@ -77,19 +77,19 @@ import Logger from 'idb-logger';
 <script>
   window.IDBLogger;
 </script>
-````
+```
 
 ### 1.1 Quick use
 
 
-````js
+```js
 const logger = new Logger();
 
 logger.log('an ordinary log');
 logger.error('an error log', 'additional information', {type: 'additional information'});
 
 logger.download(); // download log
-````
+```
 
 ### 1.2. API introduction
 
@@ -118,12 +118,13 @@ declare class Logger {
     download({ name, filter }?: {
         name?: string;
         filter?: TFilterOption;
+        keys?: string[];
     }): Promise<number>;
     get(logid: string): Promise<ILogDBData | null>;
     getAll(): Promise<ILogDBData[]>;
     filter(filter?: TFilterOption): Promise<ILogDBData[]>;
 }
-````
+```
 
 complete logdata
 
@@ -144,7 +145,7 @@ interface ILogDBData {
     timestamp: number; // timestamp
     logid: string; // log unique id
 }
-````
+```
 
 #### 1.2.1 Constructor
 
@@ -158,7 +159,7 @@ new Logger({
   onReport, // Triggered when the log is generated, can be used to customize the report data
   onDiscard // Triggered when maxRecords is reached, discarded data
 });
-````
+```
 
 1. storeType
 
@@ -198,13 +199,13 @@ await logger.info({
 }); // This call method conforms to rule 2
 await logger.warn({}, [], '', 1); // This call method conforms to rule 3
 await logger.error('error', {}, [], '', 1); // This call method conforms to rule 1
-````
+```
 
 #### 1.2.3 Query
 
 ```ts
 await logger.filter(filter); // return Promise
-````
+```
 
 filter supports three modes
 
@@ -218,7 +219,7 @@ Note: In indexedDB mode, since the function will be passed to the worker for exe
 await logger.filter(item=>{
     return item.msg.includes('xxx') && item.type === 'log';
 })
-````
+```
 
 2. AND (incoming json)
 
@@ -229,7 +230,7 @@ await logger.filter({
     msg: /xxx/i,
     type: 'log',
 })
-````
+```
 
 3. OR (pass in json array)
 
@@ -241,7 +242,7 @@ await logger.filter([{
 }, {
     type: 'log',
 }])
-````
+```
 
 The above statement means that msg in the log contains xxx or type is equal to log
 
@@ -251,10 +252,11 @@ Download logs stored in indexedDB
 
 ```ts
 await logger.download({
-  name, // the name of the downloaded file
-  filter, // same as filter in 1.2.3
+    name, // optional name of the downloaded file defaults to timestamp
+    filter, // optional same as filter in 1.2.3
+    keys, // optional specifies additional properties to download
 });
-````
+```
 
 #### 1.2.5 Other APIs
 
@@ -264,7 +266,7 @@ get all logs
 
 ```ts
 await logger.getAll();
-````
+```
 
 ##### 1.2.5.1 get
 
@@ -272,7 +274,7 @@ Get a log based on the log id
 
 ```ts
 await logger.getAll(logid);
-````
+```
 
 ##### 1.2.5.1 count
 
@@ -280,7 +282,7 @@ Get the number of logs
 
 ```ts
 await logger.count();
-````
+```
 
 ##### 1.2.5.1 delete
 
@@ -288,7 +290,7 @@ Delete a log by log id
 
 ```ts
 await logger.delete(logid);
-````
+```
 
 ##### 1.2.5.1 injectBaseInfo
 
@@ -299,7 +301,7 @@ await logger.injectBaseInfo({
     network: 'wifi',
     phone: 'xxxx',
 });
-````
+```
 
 ##### 1.2.5.1 refreshTraceId
 
@@ -309,7 +311,7 @@ Also refreshDurationStart
 
 ```ts
 await logger.refreshTraceId();
-````
+```
 
 ##### 1.2.5.1 refreshDurationStart
 
@@ -317,7 +319,7 @@ Refresh the timing starting point, generally used in scenarios that need to re-c
 
 ```ts
 await logger.refreshTraceId();
-````
+```
 
 ##### 1.2.5.1 close
 
@@ -325,7 +327,7 @@ close the database
 
 ```ts
 await logger.close();
-````
+```
 
 ##### 1.2.5.1 clear
 
@@ -333,7 +335,7 @@ close and clear the database
 
 ```ts
 await logger.clear();
-````
+```
 
 ##### 1.2.5.1 destory
 
@@ -341,4 +343,4 @@ Close, empty and delete the database
 
 ```ts
 await logger.destory();
-````
+```

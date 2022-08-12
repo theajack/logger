@@ -3,7 +3,7 @@
  * @Date: 2022-07-30 13:16:15
  * @Description: Coding something
  */
-import {IBaseInfoOption, IBaseInfoParam, IJson, ILogDBData, IMessageData, TLogStoreType} from '../type';
+import {IBaseInfoOption, IBaseInfoParam, IDownloadOptions, IJson, ILogDBData, IMessageData, TLogStoreType} from '../type';
 import {BaseInfo} from './base-info';
 
 export type TFilterOption =
@@ -31,7 +31,7 @@ export abstract class DBBaseMethods {
     abstract close(): Promise<boolean>;
     abstract destory(): Promise<boolean>;
     abstract get(logid: string): Promise<ILogDBData | null>;
-    abstract download(filter?: TFilterOption | string): Promise<IDownloadInfo>;
+    abstract download(data: IDownloadOptions): Promise<IDownloadInfo>;
     abstract filter(filter?: TFilterOption | string): Promise<ILogDBData[]>;
     abstract getAll(): Promise<ILogDBData[]>;
     abstract count(): Promise<number>;

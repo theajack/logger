@@ -1,4 +1,4 @@
-import {ILogDBData} from 'src/type';
+import {IJson, ILogDBData} from 'src/type';
 
 /*
  * @Author: tackchen
@@ -55,10 +55,28 @@ export function codeToBlob (code: string) {
   return objectURL;
 }
 
-export function dataToLogString (data: ILogDBData) {
-  const payload = typeof data.payload !== 'undefined' ? ` payload=${toLogString(data.payload)};` : '';
-  const network = data.network ? ` network=${data.network};` : '';
-  return `[${data.time}] type=${data.type}; msg=${data.msg};${payload} uid=${data.uid}; traceid=${data.traceid}; logid=${data.logid}; duration=${data.duration}; ${network} url=${data.url}; ua=${data.ua};`;
+const DefaultKeys = [
+  'type', 'msg', 'payload', 'uid', 'traceid',
+  'logid', 'duration', 'network', 'url', 'ua'
+];
+
+export function dataToLogString (data: ILogDBData, keys: string[] = []) {
+  let content = `[${data.time}]`;
+  const append = (key: string) => {
+    const v = (data as IJson)[key];
+    if (typeof v !== 'undefined' && v !== '') {
+      content += ` ${key}=${toLogString(v)};`;
+    }
+  };
+  for (const key of keys) {
+    append(key);
+  }
+  for (const key of DefaultKeys) {
+    if (!keys.includes(key)) {
+      append(key);
+    }
+  }
+  return content;
 }
 
 export function download ({

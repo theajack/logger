@@ -9,7 +9,7 @@ import {DBBase, TFilterOption} from '../common/db-base';
 import {dataToLogString} from '../common/utils';
 import {TLog} from '../common/t-log';
 import {checkValue} from '../filter-json/filter';
-import {IBaseInfoParam, ILogDBData, IMessageData, TLogStoreType} from '../type';
+import {IBaseInfoParam, IDownloadOptions, ILogDBData, IMessageData, TLogStoreType} from '../type';
 
 export class StorageStore extends DBBase {
 
@@ -112,14 +112,14 @@ export class StorageStore extends DBBase {
     return Promise.resolve(this.data.length);
   }
 
-  download (filter?: TFilterOption | string) {
+  download ({filter, keys}: IDownloadOptions) {
     let content = '';
     let count = 0;
     for (let i = 0; i < this.data.length; i++) {
       const item = this.data[i];
       if (checkValue(item, filter)) {
         count ++;
-        content += (dataToLogString(item) + '\n');
+        content += (dataToLogString(item, keys) + '\n');
       }
     }
     return Promise.resolve({content, count});

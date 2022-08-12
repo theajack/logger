@@ -4,7 +4,7 @@
  * @Description: Coding something
  */
 
-import {IJson, ILogDBData, IMessageData, TWorkerType} from '../type';
+import {IDownloadOptions, IJson, ILogDBData, IMessageData, TWorkerType} from '../type';
 import {DBBase, IAddReturn, IDownloadInfo, TFilterOption} from '../common/db-base';
 import {checkValue} from '../filter-json/filter';
 import {dataToLogString} from '../common/utils';
@@ -28,7 +28,7 @@ function createMessageMap (db: WorkerDB):
     getAll: () => db.getAll(),
     refreshDurationStart: () => db.refreshDurationStart(),
     filter: (filter: any) => db.filter(filter),
-    download: (filter: any) => db.download(filter),
+    download: (data) => db.download(data),
     count: () => db.count(),
     delete: (msgid) => db.delete(msgid),
     clear: () => db.clear(),
@@ -171,7 +171,7 @@ export class WorkerDB extends DBBase {
       });
     }
 
-    download (filter?: TFilterOption | string) {
+    download ({filter, keys = []}: IDownloadOptions) {
       filter = FuncFilter.transBack(filter);
       return new Promise<IDownloadInfo>((resolve) => {
         let content = '';
@@ -180,7 +180,7 @@ export class WorkerDB extends DBBase {
           onvalue (value) {
             if (checkValue(value, filter)) {
               count ++;
-              content += `${dataToLogString(value)}\\n`;
+              content += `${dataToLogString(value, keys)}\\n`;
             }
           },
           onend () {resolve({content, count});},

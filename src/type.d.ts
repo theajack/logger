@@ -1,3 +1,5 @@
+import {TFilterOption} from './common/db-base';
+
 /*
  * @Author: tackchen
  * @Date: 2022-07-24 16:35:16
@@ -91,4 +93,12 @@ export interface IWorkerMessage extends IWorkerMessageCommon{
 export interface IWorkerBackMessage<T = any> extends IWorkerMessageCommon{
     id: string;
     result: T;
+}
+
+export type TDownloadKeys = (keyof ILogDBData | string)[];
+
+export interface IDownloadOptions {
+    name?: string;
+    filter?: TFilterOption;
+    keys?: TDownloadKeys;
 }

@@ -5,7 +5,7 @@
  */
 import {DBBaseMethods, IAddReturn, IDownloadInfo, TFilterOption} from '../common/db-base';
 import {codeToBlob, transformDOM} from '../common/utils';
-import {IBaseInfoOption, IBaseInfoParam, IJson, ILogDBData, IMessageData, IWorkerBackMessage, TWorkerType} from '../type';
+import {IBaseInfoOption, IBaseInfoParam, IDownloadOptions, IJson, ILogDBData, IMessageData, IWorkerBackMessage, TWorkerType} from '../type';
 import WorkerCode from '../worker/dist/worker.min';
 import {FuncFilter} from '../filter-json/func-filter';
 
@@ -108,8 +108,11 @@ export class WorkerStore extends DBBaseMethods {
     return (await this._postMessage('getAll')).result;
   }
 
-  async download (filter?: TFilterOption): Promise<IDownloadInfo> {
-    return (await this._postMessage('download', FuncFilter.transFunc(filter))).result;
+  async download ({filter, keys}: IDownloadOptions): Promise<IDownloadInfo> {
+    return (await this._postMessage('download', {
+      filter: FuncFilter.transFunc(filter),
+      keys,
+    })).result;
   }
 
   async filter (filter?: TFilterOption): Promise<ILogDBData[]> {

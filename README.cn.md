@@ -118,6 +118,7 @@ declare class Logger {
     download({ name, filter }?: {
         name?: string;
         filter?: TFilterOption;
+        keys?: string[];
     }): Promise<number>;
     get(logid: string): Promise<ILogDBData | null>;
     getAll(): Promise<ILogDBData[]>;
@@ -251,8 +252,9 @@ await logger.filter([{
 
 ```ts
 await logger.download({
-  name, // 下载文件的名字
-  filter, // 同 1.2.3 中的 filter
+    name, // 可选 下载文件的名字 默认为时间戳
+    filter, // 可选 同 1.2.3 中的 filter
+    keys, // 可选 指定需要下载的额外属性
 });
 ```
 

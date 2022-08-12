@@ -5,7 +5,7 @@
  */
 import {
   IJson, IBaseInfoOption, IMessageData, TLogType,
-  IBaseInfoParam, IStoreConfig, TLogStoreType
+  IBaseInfoParam, IStoreConfig, TLogStoreType, IDownloadOptions
 } from './type';
 import {dateToStr, download, isJson, uuid} from './common/utils';
 import {
@@ -97,15 +97,12 @@ class Logger {
 
   // 下载日志
   async download ({
-    name, filter
-  }:{
-    name?: string;
-    filter?: TFilterOption
-  } = {}) {
+    name, filter, keys
+  }: IDownloadOptions) {
 
     if (!name) name = dateToStr(new Date(), '_');
         
-    const {content, count} = await this._store.download(filter);
+    const {content, count} = await this._store.download({filter, keys});
 
     download({name: `${name}.log`, content});
     return count;
