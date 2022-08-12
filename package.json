@@ -1,6 +1,6 @@
 {
     "name": "idb-logger",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Makes creating WebWorkers easier",
     "repository": "git@github.com:theajack/logger.git",
     "author": "tackchen <theajack@qq.com>",

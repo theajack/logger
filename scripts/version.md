@@ -3,6 +3,11 @@
  * @Date: 2022-08-07 15:17:42
  * @Description: Coding something
 -->
+
+## 0.0.3
+
+1. fix downdload 方法参数为空报错
+   
 ## 0.0.2
 
 1. downdload 增加 keys参数，可以选择额外属性下载

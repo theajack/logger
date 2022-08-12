@@ -98,7 +98,7 @@ class Logger {
   // 下载日志
   async download ({
     name, filter, keys
-  }: IDownloadOptions) {
+  }: IDownloadOptions = {}) {
 
     if (!name) name = dateToStr(new Date(), '_');
         
