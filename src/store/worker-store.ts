@@ -12,7 +12,7 @@ import {FuncFilter} from '../filter-json/func-filter';
 let msgid = 0;
 let worker: Worker;
     
-if (window.Worker) {
+if (typeof window !== 'undefined' && window.Worker) {
   worker = new window.Worker(codeToBlob(WorkerCode as any)); // 使用 blob对象的url
 }
  
