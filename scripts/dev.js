@@ -3,7 +3,7 @@
  * @Date: 2022-08-03 20:37:59
  * @Description: Coding something
  */
-const babel = require('esbuild-plugin-babel');
+// const babel = require('esbuild-plugin-babel');
 const {build} = require('esbuild');
 const {yamlPlugin} = require('esbuild-plugin-yaml');
 const {dtsPlugin} = require('esbuild-plugin-d.ts');
@@ -11,7 +11,8 @@ const {resolveRootPath} = require('./build/utils');
 const {wrapWorkerCode} = require('./common');
 
 
-function buildWorker () {
+async function buildWorker () {
+  const babel = (await import('esbuild-plugin-babel')).default;
   buildBase({
     entry: 'src/worker/index.ts',
     output: 'src/worker/dist/worker.min.ts',

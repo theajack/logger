@@ -53,7 +53,7 @@ export class WorkerStore extends DBBaseMethods {
     if (data.type === 'add') {
       const result = data.result;
       if (result) {
-        if (result.__type === 'discard') {
+        if (result.discard) {
           if (this.onReport) this.onReport(result?.add as ILogDBData);
           if (this.onDiscard) this.onDiscard(result?.discard as ILogDBData);
         } else {

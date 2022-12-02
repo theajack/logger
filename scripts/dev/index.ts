@@ -15,7 +15,10 @@ win.lg = new Logger({
   onReport (d) {
     console.warn('onReport', d);
   },
-  maxRecords: 10,
+  onDiscard (d) {
+    console.warn('onDiscard', d);
+  },
+  maxRecords: 15,
 });
 
 win.lg2 = new Logger({
@@ -24,5 +27,8 @@ win.lg2 = new Logger({
   onReport (d) {
     console.warn('onReport', d);
   },
-  maxRecords: 10,
+  onDiscard (d) {
+    console.warn('onDiscard', d);
+  },
+  maxRecords: 5,
 });
