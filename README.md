@@ -22,7 +22,7 @@
     <a href="https://www.jsdelivr.com/package/npm/idb-logger" target="_black">
         <img src="https://data.jsdelivr.com/v1/package/npm/idb-logger/badge" alt="jsdelivr" />
     </a>
-    <a href="https://github.com/theajack/logger/issues"><img src="https://img.shields.io/github/issues-closed/theajack/logger.svg" alt=" issue"></a>
+    <a href="https://github.com/theajack/logger/issues"><img src="https://img.shields.io/github/issues-closed/theajack/logger.svg" alt="issue"></a>
 </p>
 <p>
     <a href="https://github.com/theajack" target="_black">
@@ -31,10 +31,10 @@
     <a href="https://www.github.com/theajack/logger/blob/master/LICENSE" target="_black">
         <img src="https://img.shields.io/github/license/theajack/logger?color=%232DCE89&logo=github" alt="license" />
     </a>
-    <a href="https://cdn.jsdelivr.net/npm/idb-logger/idb-logger.min.js"><img src="https://img.shields.io/bundlephobia/minzip/tc -logger.svg" alt="Size"></a>
-    <a href="https://github.com/theajack/logger/search?l=javascript"><img src="https://img.shields.io/github/languages/top/theajack/logger.svg " alt="TopLang"></a>
-    <a href="https://www.github.com/theajack/logger"><img src="https://img.shields.io/librariesio/dependent-repos/npm/idb-logger.svg" alt ="Dependent"></a>
-    <a href="https://github.com/theajack/logger/blob/master/test/test-report.txt"><img src="https://img.shields.io/badge/test-passed -44BB44" alt="test"></a>
+    <a href="https://cdn.jsdelivr.net/npm/idb-logger/idb-logger.min.js"><img src="https://img.shields.io/bundlephobia/minzip/idb-logger.svg" alt="Size"></a>
+    <a href="https://github.com/theajack/logger/search?l=javascript"><img src="https://img.shields.io/github/languages/top/theajack/logger.svg" alt="TopLang"></a>
+    <a href="https://www.github.com/theajack/logger"><img src="https://img.shields.io/librariesio/dependent-repos/npm/idb-logger.svg" alt="Dependent"></a>
+    <a href="https://github.com/theajack/logger/blob/master/test/test-report.txt"><img src="https://img.shields.io/badge/test-passed-44BB44" alt="test"></a>
 </p>
 
 <h3>🚀 A high-performance, high-capacity, and highly scalable web-side logging system based on WebWorker and indexedDB</h3>
