@@ -45,6 +45,9 @@ export class WorkerDB extends DBBase {
 
     private loadCallbacks: Function[] = []
 
+    private recordsChecking = false
+    private continueChecking = false
+
     constructor (id: string = 'default') {
       super({id, useConsole: true, maxRecords: 0});
       if (dbMap[this.name]) return dbMap[this.name];
@@ -83,11 +86,8 @@ export class WorkerDB extends DBBase {
         //     add: ILogDBData,
         // }
         request.onsuccess = async () => {
-          const n = await this.count();
+          this._checkMaxRecords();
           let discard: ILogDBData | null = null;
-          if (n > this.baseInfo.config.maxRecords) {
-            discard = await this._removeFirst();
-          }
           resolve({
             discard,
             add: dbData,
@@ -255,16 +255,20 @@ export class WorkerDB extends DBBase {
       });
     }
 
-    private _removeFirst () {
+    private _removeFirst (n = 1) {
       return new Promise<ILogDBData | null>((resolve) => {
         const objectStore = this._getStore('readwrite');
-        const cursorObject = objectStore.openCursor(); // ! 此处不能使用索引 因为需要删除最早的
+        const cursorObject = objectStore.openKeyCursor(); // ! 此处不能使用索引 因为需要删除最早的
         cursorObject.onsuccess = (event) => {
-          const cursor: any = (event?.target as any).result;
+          const cursor: IDBCursor = (event?.target as any).result;
           // console.warn(cursor, cursor?.value);
           if (cursor) {
-            cursor.delete();
-            resolve(cursor.value);
+            objectStore.delete(cursor.primaryKey);
+            if (n > 1) {
+              cursor.continue();
+              n--;
+            }
+            resolve(null);
           } else {
             resolve(null);
             TLog.warn('移除最早记录失败, cursor = null', event);
@@ -275,6 +279,24 @@ export class WorkerDB extends DBBase {
           resolve(null);
         };
       });
+    }
+
+    private async _checkMaxRecords() {
+      if (this.recordsChecking) {
+        this.continueChecking = true
+        return;
+      }
+      this.continueChecking = false
+      this.recordsChecking = true;
+      const total = await this.count();
+      const n = total - this.baseInfo.config.maxRecords;
+      if (n > 0) {
+        await this._removeFirst(n);
+      }
+      this.recordsChecking = false;
+      if (this.continueChecking) {
+        this._checkMaxRecords();
+      }
     }
 
     private _cursorBase ({
