@@ -1312,6 +1312,9 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
     });
     _defineProperty2(_assertThisInitialized2(_this), "STORE_NAME", "records");
     _defineProperty2(_assertThisInitialized2(_this), "loadCallbacks", []);
+    _defineProperty2(_assertThisInitialized2(_this), "recordsChecking", false);
+    _defineProperty2(_assertThisInitialized2(_this), "continueChecking", false);
+    _this.id = id;
     if (dbMap[_this.name])
       return _possibleConstructorReturn2(_this, dbMap[_this.name]);
     if (!_this.db) {
@@ -1396,30 +1399,18 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
                 case 0:
                   request = _this3._getStore("readwrite").add(dbData);
                   request.onsuccess = /* @__PURE__ */ _asyncToGenerator(/* @__PURE__ */ _regeneratorRuntime().mark(function _callee3() {
-                    var n, discard;
+                    var discard;
                     return _regeneratorRuntime().wrap(function _callee3$(_context3) {
                       while (1) {
                         switch (_context3.prev = _context3.next) {
                           case 0:
-                            _context3.next = 2;
-                            return _this3.count();
-                          case 2:
-                            n = _context3.sent;
+                            _this3._checkMaxRecords();
                             discard = null;
-                            if (!(n > _this3.baseInfo.config.maxRecords)) {
-                              _context3.next = 8;
-                              break;
-                            }
-                            _context3.next = 7;
-                            return _this3._removeFirst();
-                          case 7:
-                            discard = _context3.sent;
-                          case 8:
                             resolve({
                               discard,
                               add: dbData
                             });
-                          case 9:
+                          case 3:
                           case "end":
                             return _context3.stop();
                         }
@@ -1427,6 +1418,7 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
                     }, _callee3);
                   }));
                   request.onerror = function(event) {
+                    _this3._sendError("ADD_LOG_ERROR", event);
                     TLog.error("\u6570\u636E\u5199\u5165\u5931\u8D25", event);
                     resolve(null);
                   };
@@ -1459,8 +1451,9 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
           TLog.log("\u6E05\u9664\u6570\u636E\u6210\u529F");
           resolve(true);
         };
-        request.onerror = function() {
-          TLog.warn("\u6E05\u9664\u6570\u636E\u6210\u529F");
+        request.onerror = function(event) {
+          _this4._sendError("CLEAR_ERROR", event);
+          TLog.warn("\u6E05\u9664\u6570\u636E\u5931\u8D25");
           resolve(false);
         };
       });
@@ -1485,6 +1478,7 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
           resolve(true);
         };
         request.onerror = function(event) {
+          _this5._sendError("DESTORY_ERROR", event);
           TLog.warn("\u6570\u636E\u5E93\u9500\u6BC1\u5931\u8D25:", event);
           resolve(false);
         };
@@ -1496,7 +1490,8 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
       var _this6 = this;
       return new Promise(function(resolve) {
         var request = _this6._getStore("readonly").index(INDEX_NAME).get(logid);
-        request.onerror = function() {
+        request.onerror = function(e) {
+          _this6._sendError("GET_ERROR", e);
           TLog.error("\u6570\u636E\u67E5\u8BE2\u5931\u8D25", logid);
           resolve(null);
         };
@@ -1593,7 +1588,9 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
         countRequest.onsuccess = function() {
           resolve(countRequest.result);
         };
-        countRequest.onerror = function() {
+        countRequest.onerror = function(e) {
+          _this10._sendError("COUNT_ERROR", e);
+          TLog.warn("count error", e);
           resolve(-1);
         };
       });
@@ -1616,6 +1613,7 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
                     resolve((event === null || event === void 0 ? void 0 : (_event$target = event.target) === null || _event$target === void 0 ? void 0 : _event$target.result) || -1);
                   };
                   request.onerror = function(event) {
+                    _this11._sendError("GET_KEY_ERROR", event);
                     TLog.warn("getKey error", event);
                     resolve(-1);
                   };
@@ -1660,8 +1658,9 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
                     resolve(true);
                   };
                   request.onerror = function(event) {
-                    resolve(false);
+                    _this12._sendError("DELETE_ERROR", event);
                     TLog.warn("\u5220\u9664\u65E5\u5FD7\u5931\u8D25", event);
+                    resolve(false);
                   };
                 case 11:
                 case "end":
@@ -1676,31 +1675,113 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
       }());
     }
   }, {
+    key: "_sendError",
+    value: function _sendError(message) {
+      var error2 = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : null;
+      var code = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : -1;
+      sendMessage({
+        id: this.id,
+        msgid: "",
+        type: "error",
+        result: {
+          message,
+          error: error2,
+          code
+        }
+      });
+    }
+  }, {
     key: "_removeFirst",
     value: function _removeFirst() {
       var _this13 = this;
+      var n = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : 1;
       return new Promise(function(resolve) {
         var objectStore = _this13._getStore("readwrite");
-        var cursorObject = objectStore.openCursor();
+        var cursorObject = objectStore.openKeyCursor();
         cursorObject.onsuccess = function(event) {
           var cursor = (event === null || event === void 0 ? void 0 : event.target).result;
           if (cursor) {
-            cursor.delete();
-            resolve(cursor.value);
-          } else {
+            objectStore.get(cursor.primaryKey).onsuccess = function(e) {
+              var result = e.target.result;
+              sendMessage({
+                id: _this13.id,
+                msgid: "",
+                type: "discard",
+                result
+              });
+            };
+            objectStore.delete(cursor.primaryKey).onerror = function(event2) {
+              _this13._sendError("DISCARD_ERROR", event2);
+              TLog.warn("\u79FB\u9664\u6700\u65E9\u8BB0\u5F55\u9519\u8BEF", event2);
+            };
+            if (n > 1) {
+              cursor.continue();
+              n--;
+            }
             resolve(null);
+          } else {
+            _this13._sendError("DISCARD_NOT_FOUND", null);
             TLog.warn("\u79FB\u9664\u6700\u65E9\u8BB0\u5F55\u5931\u8D25, cursor = null", event);
+            resolve(null);
           }
         };
         cursorObject.onerror = function(event) {
+          _this13._sendError("DISCARD_OPEN_CURSOR_ERROR", event);
           TLog.warn("\u79FB\u9664\u6700\u65E9\u8BB0\u5F55\u5931\u8D25", event);
           resolve(null);
         };
       });
     }
   }, {
+    key: "_checkMaxRecords",
+    value: function() {
+      var _checkMaxRecords2 = _asyncToGenerator(/* @__PURE__ */ _regeneratorRuntime().mark(function _callee7() {
+        var total, n;
+        return _regeneratorRuntime().wrap(function _callee7$(_context7) {
+          while (1) {
+            switch (_context7.prev = _context7.next) {
+              case 0:
+                if (!this.recordsChecking) {
+                  _context7.next = 3;
+                  break;
+                }
+                this.continueChecking = true;
+                return _context7.abrupt("return");
+              case 3:
+                this.continueChecking = false;
+                this.recordsChecking = true;
+                _context7.next = 7;
+                return this.count();
+              case 7:
+                total = _context7.sent;
+                n = total - this.baseInfo.config.maxRecords;
+                if (!(n > 0)) {
+                  _context7.next = 12;
+                  break;
+                }
+                _context7.next = 12;
+                return this._removeFirst(n);
+              case 12:
+                this.recordsChecking = false;
+                if (this.continueChecking) {
+                  this._checkMaxRecords();
+                }
+              case 14:
+              case "end":
+                return _context7.stop();
+            }
+          }
+        }, _callee7, this);
+      }));
+      function _checkMaxRecords() {
+        return _checkMaxRecords2.apply(this, arguments);
+      }
+      return _checkMaxRecords;
+    }()
+  }, {
     key: "_cursorBase",
     value: function _cursorBase(_ref8) {
+      var _this14 = this;
       var onend = _ref8.onend, onvalue = _ref8.onvalue, onerror = _ref8.onerror;
       var objectStore = this._getStore();
       var cursorObject = objectStore.openCursor();
@@ -1713,7 +1794,8 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
           onend();
         }
       };
-      cursorObject.onerror = function() {
+      cursorObject.onerror = function(event) {
+        _this14._sendError("QUERY_ERROR", event);
         TLog.error("\u67E5\u8BE2\u5931\u8D25");
         onerror();
       };
@@ -1721,21 +1803,22 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
   }, {
     key: "_initDB",
     value: function _initDB() {
-      var _this14 = this;
+      var _this15 = this;
       var request = globalThis.indexedDB.open(this.name, 1);
       request.onerror = function(event) {
+        _this15._sendError("INIT_DB_ERROR", event);
         TLog.error("\u6570\u636E\u5E93\u6253\u5F00\u5931\u8D25", event);
       };
       request.onsuccess = function() {
-        _this14.db = request.result;
-        _this14.loadCallbacks.forEach(function(fn2) {
+        _this15.db = request.result;
+        _this15.loadCallbacks.forEach(function(fn2) {
           return fn2();
         });
       };
       request.onupgradeneeded = function(event) {
         var _event$target2;
         var db = (_event$target2 = event.target) === null || _event$target2 === void 0 ? void 0 : _event$target2.result;
-        _this14._checkCreateStore(db, _this14.STORE_NAME);
+        _this15._checkCreateStore(db, _this15.STORE_NAME);
       };
     }
   }, {
@@ -1753,6 +1836,9 @@ var WorkerDB = /* @__PURE__ */ function(_DBBase) {
   }]);
   return WorkerDB2;
 }(DBBase);
+function sendMessage(data) {
+  globalThis.postMessage(data);
+}
 
 // src/worker/index.ts
 function _typeof6(obj) {
@@ -2066,12 +2152,12 @@ function _asyncToGenerator2(fn2) {
 function main() {
   globalThis.addEventListener("message", /* @__PURE__ */ function() {
     var _ref = _asyncToGenerator2(/* @__PURE__ */ _regeneratorRuntime2().mark(function _callee(e) {
-      var _e$data, msgid, type, data, id, db, result;
+      var _e$data, msgid, type, data, _e$data$id, id, db, result;
       return _regeneratorRuntime2().wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              _e$data = e.data, msgid = _e$data.msgid, type = _e$data.type, data = _e$data.data, id = _e$data.id;
+              _e$data = e.data, msgid = _e$data.msgid, type = _e$data.type, data = _e$data.data, _e$data$id = _e$data.id, id = _e$data$id === void 0 ? "" : _e$data$id;
               db = new WorkerDB(id);
               result = db.msgMap[type](data);
               if (!(result instanceof Promise)) {
@@ -2083,7 +2169,7 @@ function main() {
             case 6:
               result = _context.sent;
             case 7:
-              globalThis.postMessage({
+              sendMessage({
                 msgid,
                 id,
                 type,
@@ -2102,7 +2188,7 @@ function main() {
   }(), false);
 }
 main();
-var worker_default = "1";
+var worker_default = "";
 /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
 `;
 
@@ -2140,7 +2226,8 @@ var WorkerStore = class extends DBBaseMethods {
     useConsole,
     maxRecords,
     onReport,
-    onDiscard
+    onDiscard,
+    onError
   }) {
     super({
       id,
@@ -2150,6 +2237,7 @@ var WorkerStore = class extends DBBaseMethods {
     this.resolveMap = {};
     this.onDiscard = onDiscard;
     this.onReport = onReport;
+    this.onError = onError;
     this.id = id;
     if (!worker) {
       worker = new window.Worker(codeToBlob(worker_min_default));
@@ -2171,19 +2259,25 @@ var WorkerStore = class extends DBBaseMethods {
         if (result.discard) {
           if (this.onReport)
             this.onReport(result == null ? void 0 : result.add);
-          if (this.onDiscard)
-            this.onDiscard(result == null ? void 0 : result.discard);
         } else {
           if (this.onReport) {
             this.onReport(result);
           }
         }
       }
+    } else if (data.type === "discard") {
+      if (this.onDiscard)
+        this.onDiscard(data.result);
+    } else if (data.type === "error") {
+      if (this.onError)
+        this.onError(data.result);
     }
-    const resolve = this.resolveMap[data.msgid];
-    if (resolve) {
-      resolve(data);
-      delete this.resolveMap[data.msgid];
+    if (data.msgid) {
+      const resolve = this.resolveMap[data.msgid];
+      if (resolve) {
+        resolve(data);
+        delete this.resolveMap[data.msgid];
+      }
     }
   }
   injectBaseInfo(baseInfo) {
@@ -2301,6 +2395,7 @@ var StorageStore = class extends DBBase {
     this.key = `${BaseInfo.DEFAULT_DB_NAME_PREFIX}_${data.id}`;
     this.onDiscard = data.onDiscard;
     this.onReport = data.onReport;
+    this.onError = data.onError;
     this._initStoreType(data.storeType);
     this.data = this._getAll();
   }
@@ -2413,7 +2508,7 @@ var StorageStore = class extends DBBase {
 };
 
 // src/version.ts
-var version_default = "0.0.1";
+var version_default = "0.0.4";
 
 // src/logger.ts
 var Logger = class {
@@ -2581,7 +2676,7 @@ win.lg = new src_default({
   onDiscard(d) {
     console.warn("onDiscard", d);
   },
-  maxRecords: 15
+  maxRecords: 10
 });
 win.lg2 = new src_default({
   id: "main",

@@ -3,4 +3,4 @@ scripts/dev/*.js
 *.html
 **/libs/*.js
 npm
-src/worker
+src/worker/dist

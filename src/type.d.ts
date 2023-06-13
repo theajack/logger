@@ -57,6 +57,8 @@ export type ILogString = string;
 
 export type TLogStoreType = 'idb' | 'storage' | 'temp' | 'none';
 
+export interface ILogError {code: number, error: any, message: string}
+
 export interface IStoreConfig {
     id: string; // 作为dbName 使用，默认为location.hostname
     useConsole: boolean;
@@ -64,9 +66,10 @@ export interface IStoreConfig {
     maxRecords: number; // 最大日志数量 默认不限制
     onReport?: (data: ILogDBData) => void;
     onDiscard?: (data: ILogDBData) => void;
+    onError?: (err: ILogError) => void;
 }
 
-export type IBaseInfoParam = Pick<IStoreConfig, 'id' | 'useConsole' | 'maxRecords' | 'onReport' | 'onDiscard'>
+export type IBaseInfoParam = Pick<IStoreConfig, 'id' | 'useConsole' | 'maxRecords' | 'onReport' | 'onDiscard' | 'onError'>
 
 export type IStoreConfigOption = Partial<IStoreConfig>
 
@@ -82,17 +85,18 @@ export type TWorkerType = 'closeDB' | 'add' | 'injectBaseInfo'
 
 export interface IWorkerMessageCommon {
     msgid: string;
-    type: TWorkerType;
 }
 
 export interface IWorkerMessage extends IWorkerMessageCommon{
     id?: string;
     data?: any;
+    type: TWorkerType;
 }
 
 export interface IWorkerBackMessage<T = any> extends IWorkerMessageCommon{
     id: string;
     result: T;
+    type: TWorkerType | 'discard' | 'error';
 }
 
 export type TDownloadKeys = (keyof ILogDBData | string)[];

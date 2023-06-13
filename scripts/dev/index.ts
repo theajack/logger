@@ -18,7 +18,7 @@ win.lg = new Logger({
   onDiscard (d) {
     console.warn('onDiscard', d);
   },
-  maxRecords: 15,
+  maxRecords: 10,
 });
 
 win.lg2 = new Logger({

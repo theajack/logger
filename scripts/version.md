@@ -4,6 +4,13 @@
  * @Description: Coding something
 -->
 
+## 0.0.5 doing
+
+1. add log检查discard改为异步 提高性能
+2. 增加 onError 事件
+
+## 0.0.4
+
 ## 0.0.3
 
 1. fix downdload 方法参数为空报错

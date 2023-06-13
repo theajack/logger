@@ -4,15 +4,15 @@
  * @Description: Coding something
  */
 
-import {IWorkerBackMessage, IWorkerMessage} from '../type';
-import {WorkerDB} from './store';
+import {IWorkerMessage} from '../type';
+import {WorkerDB, sendMessage} from './store';
 
 function main () {
   globalThis.addEventListener('message', async function (
     this: Window,
     e: {data: IWorkerMessage}
   ) {
-    const {msgid, type, data, id} = e.data;
+    const {msgid, type, data, id = ''} = e.data;
     
     const db = new WorkerDB(id);
     let result = db.msgMap[type](data);
@@ -20,10 +20,10 @@ function main () {
       result = await result;
     }
     // TLog.log(globalThis, globalThis.localStorage);
-    (globalThis.postMessage as any)({msgid, id, type, result} as IWorkerBackMessage);
+    sendMessage({msgid, id, type, result});
   }, false);
 }
 
 main();
 
-export default '1';
+export default '';

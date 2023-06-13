@@ -32,6 +32,7 @@ export class StorageStore extends DBBase {
     this.key = `${BaseInfo.DEFAULT_DB_NAME_PREFIX}_${data.id}`;
     this.onDiscard = data.onDiscard;
     this.onReport = data.onReport;
+    this.onError = data.onError;
     this._initStoreType(data.storeType);
     this.data = this._getAll();
   }
@@ -78,6 +79,7 @@ export class StorageStore extends DBBase {
       this.data.push(dbData);
       this._saveAll();
     }
+    // ! 为了对齐worder-store
     return Promise.resolve({
       discard,
       add: dbData

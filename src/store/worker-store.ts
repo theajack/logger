@@ -25,6 +25,7 @@ export class WorkerStore extends DBBaseMethods {
     maxRecords,
     onReport,
     onDiscard,
+    onError,
   }: IBaseInfoParam) {
     super({
       id,
@@ -33,6 +34,7 @@ export class WorkerStore extends DBBaseMethods {
     });
     this.onDiscard = onDiscard;
     this.onReport = onReport;
+    this.onError = onError;
 
     this.id = id;
     if (!worker) {
@@ -55,16 +57,23 @@ export class WorkerStore extends DBBaseMethods {
       if (result) {
         if (result.discard) {
           if (this.onReport) this.onReport(result?.add as ILogDBData);
-          if (this.onDiscard) this.onDiscard(result?.discard as ILogDBData);
+          // ! 由于采用了异步插入日志 此处 discard 将永远返回null
+          // if (this.onDiscard) this.onDiscard(result?.discard as ILogDBData);
         } else {
           if (this.onReport) { this.onReport(result as ILogDBData);}
         }
       }
+    } else if (data.type === 'discard') {
+      if (this.onDiscard) this.onDiscard(data.result as ILogDBData);
+    } else if (data.type === 'error') {
+      if (this.onError) this.onError(data.result);
     }
-    const resolve = this.resolveMap[data.msgid];
-    if (resolve) {
-      resolve(data);
-      delete this.resolveMap[data.msgid];
+    if (data.msgid) {
+      const resolve = this.resolveMap[data.msgid];
+      if (resolve) {
+        resolve(data);
+        delete this.resolveMap[data.msgid];
+      }
     }
   }
 
