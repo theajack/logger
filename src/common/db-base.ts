@@ -10,7 +10,7 @@ export type TFilterOption =
     (data: ILogDBData) => boolean |
     IJson |
     IJson[];
- 
+
 export interface IDownloadInfo {
     content: string;
     count: number;
