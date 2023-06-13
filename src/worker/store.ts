@@ -49,6 +49,18 @@ export class WorkerDB extends DBBase {
   private recordsChecking = false;
   private continueChecking = false;
 
+  private discardResolveList: (any)[] = [];
+  private resolveDiscard (discard: ILogDBData|null) {
+    this.discardResolveList.shift()?.(discard);
+  }
+  private batchResolveDiscardNull (n?: number) {
+    if (typeof n === 'number') {
+      this.discardResolveList.splice(0, this.discardResolveList.length - n).forEach(resolve => {resolve(null);});
+    } else {
+      this.discardResolveList.forEach(resolve => {resolve(null);});
+      this.discardResolveList = [];
+    }
+  }
   constructor (id: string = 'default') {
     super({id, useConsole: true, maxRecords: 0});
     this.id = id;
@@ -76,18 +88,17 @@ export class WorkerDB extends DBBase {
       }
     });
   }
-
   private _addDBData (dbData: ILogDBData) {
     return new Promise<IAddReturn>(async (resolve) => {
       // TLog.log('traceid', dbData.traceid);
       const request = this._getStore('readwrite').add(dbData);
       request.onsuccess = async () => {
         this._checkMaxRecords();
-        const discard: ILogDBData | null = null;
-        resolve({
-          discard, // ! 修改了 discard逻辑为异步 此处永远返回null
-          // todo 设计一个机制处理 回调返回对应log的discard
-          add: dbData,
+        this.discardResolveList.push((discard: ILogDBData|null) => {
+          resolve({
+            discard, // 返回对应log的discard
+            add: dbData,
+          });
         });
       };
       request.onerror = (event) => {
@@ -265,40 +276,36 @@ export class WorkerDB extends DBBase {
     sendMessage({id: this.id, msgid: '', type: 'error', result: {message, error, code}});
   }
 
-  private _removeFirst (n = 1) {
-    return new Promise<ILogDBData | null>((resolve) => {
-      const objectStore = this._getStore('readwrite');
-      const cursorObject = objectStore.openKeyCursor(); // ! 此处不能使用索引 因为需要删除最早的
-      cursorObject.onsuccess = (event) => {
-        const cursor: IDBCursor = (event?.target as any).result;
-        // console.warn(cursor, cursor?.value);
-        if (cursor) {
-          objectStore.get(cursor.primaryKey).onsuccess = (e) => {
-            // @ts-ignore
-            const result = e.target.result;
-            sendMessage({id: this.id, msgid: '', type: 'discard', result});
-          };
-          objectStore.delete(cursor.primaryKey).onerror = (event) => {
-            this._sendError('DISCARD_ERROR', event);
-            TLog.warn('移除最早记录错误', event);
-          };
-          if (n > 1) {
-            cursor.continue();
-            n--;
-          }
-          resolve(null);
-        } else {
-          this._sendError('DISCARD_NOT_FOUND', null);
-          TLog.warn('移除最早记录失败, cursor = null', event);
-          resolve(null);
+  private _removeTop (n = 1) {
+    const objectStore = this._getStore('readwrite');
+    const cursorObject = objectStore.openKeyCursor();
+    cursorObject.onsuccess = (event) => {
+      const cursor: IDBCursor = (event?.target as any).result;
+      // console.warn(cursor, cursor?.value);
+      if (cursor) {
+        objectStore.get(cursor.primaryKey).onsuccess = (e) => {
+          // @ts-ignore
+          const result = e.target.result;
+          sendMessage({id: this.id, msgid: '', type: 'discard', result});
+          this.resolveDiscard(result);
+        };
+        objectStore.delete(cursor.primaryKey).onerror = (event) => {
+          this._sendError('DISCARD_ERROR', event);
+          TLog.warn('移除最早记录错误', event);
+        };
+        if (n > 1) {
+          cursor.continue();
+          n--;
         }
-      };
-      cursorObject.onerror = (event) => {
-        this._sendError('DISCARD_OPEN_CURSOR_ERROR', event);
-        TLog.warn('移除最早记录失败', event);
-        resolve(null);
-      };
-    });
+      } else {
+        this._sendError('DISCARD_NOT_FOUND', null);
+        TLog.warn('移除最早记录失败, cursor = null', event);
+      }
+    };
+    cursorObject.onerror = (event) => {
+      this._sendError('DISCARD_OPEN_CURSOR_ERROR', event);
+      TLog.warn('移除最早记录失败', event);
+    };
   }
 
   private async _checkMaxRecords () {
@@ -310,8 +317,13 @@ export class WorkerDB extends DBBase {
     this.recordsChecking = true;
     const total = await this.count();
     const n = total - this.baseInfo.config.maxRecords;
+    // console.log('_checkMaxRecords', n, this.discardResolveList.length);
+    // _checkMaxRecords 5 15
     if (n > 0) {
-      await this._removeFirst(n);
+      this._removeTop(n);
+      this.batchResolveDiscardNull(n);
+    } else {
+      this.batchResolveDiscardNull();
     }
     this.recordsChecking = false;
     if (this.continueChecking) {

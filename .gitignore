@@ -3,4 +3,4 @@ dist
 cdn
 .pnpm-debug.log
 npm
-script/dev/buidle.*
+scripts/dev/bundle.*
