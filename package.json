@@ -1,7 +1,7 @@
 {
     "name": "idb-logger",
-    "version": "0.0.4",
-    "description": "Makes creating WebWorkers easier",
+    "version": "0.0.5",
+    "description": "A high-performance, high-capacity, and highly scalable web-side logging system based on WebWorker and indexedDB",
     "repository": "git@github.com:theajack/logger.git",
     "author": "tackchen <theajack@qq.com>",
     "main": "idb-logger.min.js",
@@ -15,7 +15,11 @@
         "dev": "run-p _dev _serve",
         "build": "node scripts/build/build.js"
     },
-    "keywords": [],
+    "keywords": [
+        "indexedDB",
+        "logger",
+        "webworker"
+    ],
     "license": "MIT",
     "bugs": {
         "url": "https://github.com/theajack/logger/issues"

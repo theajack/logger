@@ -88,6 +88,11 @@ const logger = new Logger();
 logger.log('an ordinary log');
 logger.error('an error log', 'additional information', {type: 'additional information'});
 
+logger.log('start').then(({discard, add})=>{
+    // add is log detail
+    // If maxRecords is reached, discard is a discarded log, otherwise null
+})
+
 logger.download(); // download log
 ```
 
@@ -157,8 +162,24 @@ new Logger({
   maxRecords, // maximum number of stored records default 10000
   baseInfo, // inject custom base information
   onReport, // Triggered when the log is generated, can be used to customize the report data
-  onDiscard // Triggered when maxRecords is reached, discarded data
+  onDiscard, // Triggered when maxRecords is reached, discarded data
+  onError, // error listener
 });
+```
+
+declaration
+
+```ts
+interface ILoggerOption extends Partial<IStoreConfig> {
+    id?: string;
+    useConsole?: boolean;
+    storeType?: TLogStoreType;
+    maxRecords?: number;
+    baseInfo?: IBaseInfo;
+    onReport?: (data: ILogDBData) => void;
+    onDiscard?: (data: ILogDBData) => void;
+    onError?: (err: ILogError) => void;
+}
 ```
 
 1. storeType

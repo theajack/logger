@@ -30,6 +30,7 @@ class Logger {
     baseInfo,
     onReport,
     onDiscard,
+    onError,
   }: ILoggerOption = {}) {
         
     this._store = LoggerHelper.initStore({
@@ -39,6 +40,7 @@ class Logger {
       useConsole,
       onReport,
       onDiscard,
+      onError,
     });
 
     this.storeType = this._store.type;
@@ -169,9 +171,10 @@ const LoggerHelper = {
     useConsole,
     onReport,
     onDiscard,
+    onError,
   }: IStoreConfig) {
     const canUseIndexedDB = !!window.Worker && !!window.indexedDB;
-    const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport, onDiscard};
+    const options: IBaseInfoParam = {id, useConsole, maxRecords, onReport, onDiscard, onError};
         
     if (storeType === 'idb' && canUseIndexedDB) {
       return new WorkerStore(options);

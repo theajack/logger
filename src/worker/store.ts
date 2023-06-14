@@ -286,7 +286,6 @@ export class WorkerDB extends DBBase {
         objectStore.get(cursor.primaryKey).onsuccess = (e) => {
           // @ts-ignore
           const result = e.target.result;
-          sendMessage({id: this.id, msgid: '', type: 'discard', result});
           this.resolveDiscard(result);
         };
         objectStore.delete(cursor.primaryKey).onerror = (event) => {

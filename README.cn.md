@@ -88,6 +88,11 @@ const logger = new Logger();
 logger.log('一条普通日志');
 logger.error('一条错误日志', '附加信息', {type: '附加信息'});
 
+logger.log('start').then(({discard, add})=>{
+    // add 为日志详情
+    // 如果达到了 maxRecords，discard 则为丢弃的日志，否则为null
+})
+
 logger.download(); // 下载日志
 ```
 
@@ -157,8 +162,24 @@ new Logger({
   maxRecords, // 最大存储记录数 默认10000
   baseInfo, // 注入自定义的基础信息
   onReport, // 当生成日志时触发，可用于自定义上报数据
-  onDiscard // 当达到 maxRecords 时触发，丢弃掉的数据
+  onDiscard, // 当达到 maxRecords 时触发，丢弃掉的数据
+  onError, // error listener
 });
+```
+
+声明
+
+```ts
+interface ILoggerOption extends Partial<IStoreConfig> {
+    id?: string;
+    useConsole?: boolean;
+    storeType?: TLogStoreType;
+    maxRecords?: number;
+    baseInfo?: IBaseInfo;
+    onReport?: (data: ILogDBData) => void;
+    onDiscard?: (data: ILogDBData) => void;
+    onError?: (err: ILogError) => void;
+}
 ```
 
 1. storeType

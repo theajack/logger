@@ -32,3 +32,10 @@ win.lg2 = new Logger({
   },
   maxRecords: 5,
 });
+
+function test1 () {
+  for (let i = 0; i < 15; i++) {
+    const str = 'm' + i;
+    win.lg.log(str).then((d:any) => {console.log('THEN:' + str, d.discard);});
+  }
+}

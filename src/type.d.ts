@@ -63,7 +63,7 @@ export interface IStoreConfig {
     id: string; // 作为dbName 使用，默认为location.hostname
     useConsole: boolean;
     storeType: TLogStoreType; // 存储类型
-    maxRecords: number; // 最大日志数量 默认不限制
+    maxRecords: number; // 最大日志数量 默认10000
     onReport?: (data: ILogDBData) => void;
     onDiscard?: (data: ILogDBData) => void;
     onError?: (err: ILogError) => void;
@@ -96,7 +96,7 @@ export interface IWorkerMessage extends IWorkerMessageCommon{
 export interface IWorkerBackMessage<T = any> extends IWorkerMessageCommon{
     id: string;
     result: T;
-    type: TWorkerType | 'discard' | 'error';
+    type: TWorkerType | 'error';
 }
 
 export type TDownloadKeys = (keyof ILogDBData | string)[];

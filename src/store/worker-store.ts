@@ -55,16 +55,11 @@ export class WorkerStore extends DBBaseMethods {
     if (data.type === 'add') {
       const result = data.result;
       if (result) {
+        if (this.onReport) this.onReport(result.add);
         if (result.discard) {
-          if (this.onReport) this.onReport(result?.add as ILogDBData);
-          // ! 由于采用了异步插入日志 此处 discard 将永远返回null
-          // if (this.onDiscard) this.onDiscard(result?.discard as ILogDBData);
-        } else {
-          if (this.onReport) { this.onReport(result as ILogDBData);}
+          if (this.onDiscard) this.onDiscard(result.discard);
         }
       }
-    } else if (data.type === 'discard') {
-      if (this.onDiscard) this.onDiscard(data.result as ILogDBData);
     } else if (data.type === 'error') {
       if (this.onError) this.onError(data.result);
     }
